@@ -1,0 +1,45 @@
+.measure-panel {
+  position: absolute;
+  top: 24px;
+  left: 96px;
+  z-index: 1001;
+  width: 300px;
+  padding: 16px;
+}
+
+.measure-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.measure-modes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.measure-modes .btn {
+  flex: 1;
+  border-radius: 10px;
+}
+
+.measure-instructions {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.measure-result {
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.measure-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2563eb;
+}

@@ -1,0 +1,68 @@
+.search-panel {
+  position: absolute;
+  top: 24px;
+  left: 96px;
+  z-index: 1001;
+  width: 340px;
+  max-width: calc(100vw - 120px);
+  padding: 16px;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.search-form .input-group-text {
+  border-radius: 10px 0 0 10px;
+}
+
+.search-form .form-control {
+  border-radius: 0 10px 10px 0;
+}
+
+.search-form .btn {
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+.search-results {
+  margin-top: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--gis-transition);
+}
+
+.search-result-item:hover {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.search-result-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-type {
+  font-size: 11px;
+  color: var(--text-muted);
+}

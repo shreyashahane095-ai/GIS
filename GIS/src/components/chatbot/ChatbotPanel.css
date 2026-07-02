@@ -1,0 +1,252 @@
+
+
+
+.chatbot-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  position: relative;
+}
+
+
+
+.chatbot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px;
+  border-bottom: none;
+  background: transparent;
+}
+
+
+.chatbot-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--gis-text);
+}
+
+.chatbot-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chatbot-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--gis-map-control-border);
+  background: var(--gis-map-control-bg);
+  color: var(--gis-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--gis-transition);
+}
+
+.chatbot-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--gis-shadow-sm);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: var(--gis-primary);
+}
+
+
+.chatbot-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px;
+  scroll-behavior: smooth;
+}
+
+
+
+
+
+.chatbot-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chatbot-message {
+  display: flex;
+  margin-bottom: 0;
+}
+
+
+.chatbot-message.user {
+  justify-content: flex-end;
+}
+
+.chatbot-message.assistant {
+  justify-content: flex-start;
+}
+
+.chatbot-bubble {
+  max-width: 90%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  color: var(--gis-text);
+  line-height: 1.35;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+
+.chatbot-message.user .chatbot-bubble {
+  background: transparent;
+  border-color: transparent;
+}
+
+.chatbot-message.assistant .chatbot-bubble {
+  background: transparent;
+}
+
+
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chatbot-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  cursor: ew-resize;
+  background: transparent;
+  border: none;
+  z-index: 2;
+}
+
+.chatbot-resizing .chatbot-resize-handle {
+  cursor: ew-resize;
+}
+
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gis-primary);
+  opacity: 0.6;
+  animation: typingDots 900ms infinite ease-in-out;
+}
+
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes typingDots {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.chatbot-input-row {
+  padding: 10px 12px;
+  border-top: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+}
+
+
+.chatbot-input {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--gis-border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--gis-text);
+  padding: 0 12px;
+  outline: none;
+  transition: box-shadow 160ms var(--ease), border-color 160ms var(--ease);
+}
+
+.chatbot-input::placeholder {
+  color: var(--gis-map-popup-muted);
+}
+
+.chatbot-input:focus {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.chatbot-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: var(--gis-primary);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--gis-transition);
+}
+
+.chatbot-send-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--gis-shadow-sm);
+}
+
+.chatbot-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Layout stripping:
+   Keep the card UI but remove overlay/fixed-position behavior. */
+.chatbot-restore {
+  display: none;
+}
+
+/* Ensure the root wrapper doesn't behave like a fixed overlay */
+.chatbot-root {
+  position: static;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+
+/* Responsive: keep normal flow layout */
+@media (max-width: 480px) {
+  .chatbot-root {
+    width: 100%;
+  }
+}
+
+
+

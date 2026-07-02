@@ -1,0 +1,48 @@
+.error-boundary {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #0f172a;
+}
+
+.error-box {
+  max-width: 600px;
+  width: 100%;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.error-box h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  color: #dc2626;
+}
+
+.error-box p {
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.error-message,
+.error-stack {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #0f172a;
+  overflow-x: auto;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-stack {
+  max-height: 200px;
+  overflow-y: auto;
+}

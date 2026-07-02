@@ -1,0 +1,505 @@
+/* ============================================
+   HYBRID DESIGN SYSTEM
+   Dark Theme: Command Center Style
+   Light Theme: Enterprise Style
+   ============================================ */
+
+:root {
+  /* ----- LIGHT THEME (Enterprise) ----- */
+  /* Backgrounds */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --bg-input: #ffffff;
+  --bg-dropdown: #ffffff;
+  --bg-modal: rgba(15, 23, 42, 0.55);
+  --bg-tooltip: #0f172a;
+  
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  --text-on-primary: #ffffff;
+  
+  /* Borders */
+  --border-color: #e2e8f0;
+  --border-light: #f1f5f9;
+  --border-focus: #2563eb;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 14px 32px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 24px 48px rgba(15, 23, 42, 0.10);
+  --shadow-glow: 0 0 0 1px rgba(37, 99, 235, 0.08), 0 12px 28px rgba(37, 99, 235, 0.10);
+  
+  /* Primary Colors - Blue */
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --primary: var(--primary-600);
+  --primary-hover: var(--primary-700);
+  --primary-light: var(--primary-100);
+  --primary-dark: var(--primary-800);
+  
+  /* Accent Colors - Cyan */
+  --accent-50: #ecfeff;
+  --accent-100: #cffafe;
+  --accent-200: #a5f3fc;
+  --accent-300: #67e8f9;
+  --accent-400: #22d3ee;
+  --accent-500: #06b6d4;
+  --accent-600: #0891b2;
+  --accent: var(--accent-500);
+  
+  /* Status Colors */
+  --success: #22c55e;
+  --success-bg: #f0fdf4;
+  --warning: #f59e0b;
+  --warning-bg: #fffbeb;
+  --error: #ef4444;
+  --error-bg: #fef2f2;
+  --info: #3b82f6;
+  --info-bg: #eff6ff;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --glass-blur: 12px;
+  
+  /* Map Controls */
+  --map-control-bg: #ffffff;
+  --map-control-hover: #f1f5f9;
+  --map-control-border: #e2e8f0;
+  --map-control-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  
+  /* Scrollbar */
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+  
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 400ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Sizing */
+  --navbar-height: 48px;
+  --sidebar-width: 280px;
+  --sidebar-width-right: 320px;
+  --panel-width: 360px;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-full: 9999px;
+}
+
+/* ============================================
+   DARK THEME (Command Center)
+   ============================================ */
+[data-theme="dark"] {
+  /* Backgrounds - Slate */
+  --bg-primary: #0f172a;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1e293b;
+  --bg-card: #111827;
+  --bg-hover: #1e293b;
+  --bg-input: #111827;
+  --bg-dropdown: #111827;
+  --bg-modal: rgba(2, 6, 23, 0.8);
+  --bg-tooltip: #020617;
+  
+  /* Text - Light */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+  --text-on-primary: #ffffff;
+  
+  /* Borders - Subtle */
+  --border-color: #334155;
+  --border-light: #1e293b;
+  --border-focus: #3b82f6;
+  
+  /* Shadows - Darker */
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.35);
+  --shadow-md: 0 10px 24px rgba(2, 6, 23, 0.28);
+  --shadow-lg: 0 16px 36px rgba(2, 6, 23, 0.34);
+  --shadow-xl: 0 24px 52px rgba(2, 6, 23, 0.42);
+  --shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.18), 0 10px 28px rgba(59, 130, 246, 0.18);
+  
+  /* Primary Colors - Cyan/Blue Accent */
+  --primary-50: #0c1a2e;
+  --primary-100: #0f2847;
+  --primary-200: #1a3a6b;
+  --primary-300: #2a4f8f;
+  --primary-400: #3b82f6;
+  --primary-500: #60a5fa;
+  --primary-600: #93bbfc;
+  --primary-700: #bfdbfe;
+  --primary-800: #dbeafe;
+  --primary-900: #eff6ff;
+  --primary: var(--primary-400);
+  --primary-hover: var(--primary-300);
+  --primary-light: var(--primary-800);
+  --primary-dark: var(--primary-500);
+  
+  /* Accent Colors - Cyan Glow */
+  --accent-50: #0c1a1f;
+  --accent-100: #0f2a33;
+  --accent-200: #1a3d4a;
+  --accent-300: #2a5a6b;
+  --accent-400: #22d3ee;
+  --accent-500: #67e8f9;
+  --accent: var(--accent-400);
+  
+  /* Status Colors - Neon */
+  --success: #34d399;
+  --success-bg: #0a1f14;
+  --warning: #fbbf24;
+  --warning-bg: #1f1a0a;
+  --error: #f87171;
+  --error-bg: #1f0a0a;
+  --info: #60a5fa;
+  --info-bg: #0a1428;
+  
+  /* Glassmorphism - Dark */
+  --glass-bg: rgba(17, 25, 39, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-blur: 16px;
+  
+  /* Map Controls - Dark */
+  --map-control-bg: #111927;
+  --map-control-hover: #1a2332;
+  --map-control-border: #1e293b;
+  --map-control-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  
+  /* Scrollbar - Dark */
+  --scrollbar-track: #111927;
+  --scrollbar-thumb: #1e293b;
+  --scrollbar-thumb-hover: #334155;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+
+#root {
+  height: 100%;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ============================================
+   GLASSMORPHISM UTILITY
+   ============================================ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-dark {
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   GLOW EFFECTS (Dark Theme)
+   ============================================ */
+[data-theme="dark"] .glow-primary {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .glow-accent {
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.12);
+}
+
+[data-theme="dark"] .glow-success {
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.12);
+}
+
+/* ============================================
+   THEME TRANSITION
+   ============================================ */
+.theme-transition {
+  transition: all 0.3s var(--ease);
+}
+
+.theme-transition-fast {
+  transition: all 0.15s var(--ease);
+}
+
+.theme-transition-slow {
+  transition: all 0.5s var(--ease);
+}
+
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "leaflet/dist/leaflet.css";
+@import "leaflet-draw/dist/leaflet.draw.css";
+
+:root {
+  --gis-primary: #2563eb;
+  --gis-primary-dark: #1d4ed8;
+  --gis-bg: #0f172a;
+  --gis-surface: rgba(255, 255, 255, 0.95);
+  --gis-surface-glass: rgba(255, 255, 255, 0.82);
+  --gis-border: rgba(15, 23, 42, 0.12);
+  --gis-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  --gis-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.1);
+  --gis-radius: 16px;
+  --gis-radius-sm: 12px;
+  --gis-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --gis-text: #0f172a;
+  --gis-text-muted: #64748b;
+  --gis-map-bg: #f8fafc;
+  --gis-map-control-bg: rgba(255, 255, 255, 0.92);
+  --gis-map-control-border: rgba(15, 23, 42, 0.12);
+  --gis-map-control-text: #0f172a;
+  --gis-map-popup-text: #0f172a;
+  --gis-map-popup-muted: #64748b;
+  --gis-map-popup-border: rgba(148, 163, 184, 0.35);
+}
+
+[data-theme="dark"] {
+  --gis-surface: rgba(17, 24, 39, 0.95);
+  --gis-surface-glass: rgba(15, 23, 42, 0.82);
+  --gis-border: rgba(255, 255, 255, 0.14);
+  --gis-text: #f8fafc;
+  --gis-text-muted: #cbd5e1;
+  --gis-map-bg: #020617;
+  --gis-map-control-bg: rgba(15, 23, 42, 0.92);
+  --gis-map-control-border: rgba(255, 255, 255, 0.12);
+  --gis-map-control-text: #f8fafc;
+  --gis-map-popup-text: #f8fafc;
+  --gis-map-popup-muted: #cbd5e1;
+  --gis-map-popup-border: rgba(255, 255, 255, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #0f172a;
+}
+
+.glass-panel {
+  background: var(--gis-surface-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--gis-border);
+  box-shadow: var(--gis-shadow);
+  border-radius: var(--gis-radius);
+}
+
+/* Disable the “layout behind” blur/glass effect specifically for the chatbot panel */
+.chatbot-card.glass-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+
+.gis-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--gis-map-control-border);
+  border-radius: var(--gis-radius-sm);
+  background: var(--gis-map-control-bg);
+  color: var(--gis-map-control-text);
+  box-shadow: var(--gis-shadow-sm);
+  transition: var(--gis-transition);
+  cursor: pointer;
+  position: relative;
+}
+
+.gis-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gis-shadow);
+  color: var(--gis-primary);
+  background: var(--gis-surface);
+}
+
+.gis-btn.active {
+  background: var(--gis-primary);
+  color: #ffffff;
+  border-color: var(--gis-primary);
+}
+
+.gis-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.leaflet-container {
+  background: #0f172a;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.gis-dropdown-menu {
+  min-width: 180px;
+  padding: 8px;
+  border: none;
+  border-radius: var(--gis-radius-sm);
+  background: var(--gis-surface);
+  box-shadow: var(--gis-shadow);
+}
+
+.gis-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--gis-transition);
+  color: #334155;
+}
+
+.gis-dropdown-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--gis-primary);
+}
+
+.gis-dropdown-item.active {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--gis-primary);
+  font-weight: 600;
+}
+
+.gis-slider {
+  width: 100%;
+  accent-color: var(--gis-primary);
+}
+
+.gis-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.gis-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+  border-radius: 4px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gis-fade-in {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

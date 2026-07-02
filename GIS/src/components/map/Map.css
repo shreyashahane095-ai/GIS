@@ -1,0 +1,99 @@
+.gis-map {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: var(--gis-map-bg);
+  transition: width 0.2s ease, height 0.2s ease;
+}
+
+.gis-map .leaflet-control-zoom {
+  display: none;
+}
+
+.gis-map .leaflet-draw-toolbar {
+  display: none;
+}
+
+.gis-map .leaflet-draw-actions {
+  display: none;
+}
+
+.gis-map .leaflet-control-attribution {
+  background: var(--gis-map-control-bg);
+  color: var(--gis-map-control-text);
+  border: 1px solid var(--gis-map-control-border);
+  border-radius: 4px 0 0 0;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.gis-map.gis-drawing {
+  cursor: crosshair;
+}
+
+.gis-map.gis-map-3d .leaflet-map-pane {
+  transform: perspective(900px) rotateX(var(--gis-map-pitch, 0deg));
+  transform-origin: center center;
+  transition: transform 0.2s ease;
+}
+
+.region-hover-leaflet-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  background: var(--gis-surface);
+  color: var(--gis-map-popup-text);
+  border: 1px solid var(--gis-border);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+}
+
+.region-hover-leaflet-popup .leaflet-popup-tip {
+  background: var(--gis-surface);
+}
+
+.region-hover-leaflet-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  min-width: 180px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.region-hover-popup strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--gis-map-popup-text);
+}
+
+.region-hover-popup div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--gis-map-popup-muted);
+}
+
+.region-hover-popup span {
+  color: var(--gis-map-popup-muted);
+}
+
+.region-hover-popup .region-comments {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--gis-map-popup-border);
+}
+
+.region-hover-popup .region-comments span {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--gis-map-popup-text);
+}
+
+.region-hover-popup .region-comments ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.region-hover-popup .region-comments li {
+  margin: 2px 0;
+  color: var(--gis-map-popup-text);
+}

@@ -1,0 +1,77 @@
+.pointer-tools-panel {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  width: 220px;
+  padding: 16px;
+}
+
+.pointer-tools-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.pointer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: var(--gis-transition);
+}
+
+.pointer-close:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #334155;
+}
+
+.pointer-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pointer-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--gis-transition);
+}
+
+.pointer-tool-btn:hover {
+  border-color: var(--gis-primary);
+  color: var(--gis-primary);
+}
+
+.pointer-tool-btn.active {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: var(--gis-primary);
+  color: var(--gis-primary);
+}
+
+.pointer-hint {
+  padding: 10px;
+  background: rgba(37, 99, 235, 0.06);
+  border-radius: 10px;
+  font-size: 11px;
+  color: #475569;
+  text-align: center;
+}

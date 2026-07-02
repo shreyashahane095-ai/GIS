@@ -1,0 +1,209 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+  transition: background-color 0.3s var(--ease);
+}
+
+/* ============================================
+   NAVBAR - Glass Effect
+   ============================================ */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: var(--navbar-height);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s var(--ease);
+}
+
+[data-theme="dark"] .navbar {
+  background: rgba(10, 14, 23, 0.85);
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================
+   APP BODY
+   ============================================ */
+.app-body {
+  display: flex;
+  flex: 1;
+  margin-top: calc(var(--navbar-height) + var(--secondary-navbar-height, 40px));
+  height: calc(100vh - var(--navbar-height) - var(--secondary-navbar-height, 40px));
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  position: relative;
+}
+
+/* ============================================
+   SIDEBARS
+   ============================================ */
+.left-sidebar-wrapper {
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: width 0.3s var(--ease), opacity 0.3s var(--ease);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.95));
+  border-right: 1px solid var(--border-color);
+  width: 72px;
+  opacity: 1;
+  visibility: visible;
+  z-index: 100;
+}
+
+.left-sidebar-wrapper.open {
+  width: var(--sidebar-width);
+  opacity: 1;
+  visibility: visible;
+}
+
+
+
+
+
+.left-sidebar-wrapper.collapsed {
+  width: 72px;
+  opacity: 1;
+  visibility: visible;
+}
+
+[data-theme="dark"] .left-sidebar-wrapper {
+  background: linear-gradient(180deg, rgba(17,25,39,0.98), rgba(15,23,42,0.96));
+}
+
+.right-sidebar-wrapper {
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: width 0.3s var(--ease), opacity 0.3s var(--ease);
+  background-color: var(--bg-secondary);
+  border-left: 1px solid var(--border-color);
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 100;
+}
+
+.right-sidebar-wrapper.open {
+  width: var(--sidebar-width-right);
+  opacity: 1;
+  visibility: visible;
+}
+
+.right-sidebar-wrapper.collapsed {
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+.main-content {
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  min-width: 0;
+  height: 100%;
+  position: relative;
+}
+
+
+
+
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 280px;
+    --sidebar-width-right: 260px;
+    --navbar-height: 50px;
+    --secondary-navbar-height: 40px;
+  }
+  
+  .left-sidebar-wrapper.open {
+    width: var(--sidebar-width);
+  }
+  
+  .right-sidebar-wrapper.open {
+    width: var(--sidebar-width-right);
+  }
+  
+  .app-body {
+    margin-top: calc(var(--navbar-height) + var(--secondary-navbar-height, 40px));
+    height: calc(100vh - var(--navbar-height) - var(--secondary-navbar-height, 40px));
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --sidebar-width: 100%;
+    --sidebar-width-right: 100%;
+    --navbar-height: 46px;
+    --secondary-navbar-height: 44px;
+  }
+  
+  .app-body {
+    flex-direction: column;
+    margin-top: calc(var(--navbar-height) + var(--secondary-navbar-height, 40px));
+    height: calc(100vh - var(--navbar-height) - var(--secondary-navbar-height, 40px));
+    overflow-y: auto;
+  }
+  
+  .left-sidebar-wrapper.open {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .left-sidebar-wrapper.collapsed {
+    height: 0;
+    width: 100%;
+  }
+  
+  .right-sidebar-wrapper.open {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .right-sidebar-wrapper.collapsed {
+    height: 0;
+    width: 100%;
+  }
+  
+  .main-content {
+    flex: 1;
+    min-height: 300px;
+    height: 500px;
+  }
+}
+
+.app-root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}

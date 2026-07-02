@@ -1,0 +1,42 @@
+.bottom-toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--gis-surface-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--gis-border);
+  box-shadow: var(--gis-shadow);
+  border-radius: var(--gis-radius);
+}
+
+.toolbar-btn-wrapper {
+  position: relative;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(15, 23, 42, 0.12);
+  margin: 0 4px;
+}
+
+.toolbar-dropdown {
+  position: absolute;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+  min-width: 180px;
+  padding: 8px;
+  background: var(--gis-surface);
+  border-radius: var(--gis-radius-sm);
+  box-shadow: var(--gis-shadow);
+  animation: fadeIn 0.2s ease-out;
+}

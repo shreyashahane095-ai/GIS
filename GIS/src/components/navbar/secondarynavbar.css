@@ -1,0 +1,124 @@
+/* Secondary Navbar Container */
+.secondary-navbar {
+  display: flex;
+  align-items: center;
+background: var(--glass-bg);
+  color: var(--text-primary);
+  padding: 0 20px;
+  height: 40px;
+  border-bottom: 1px solid var(--glass-border);
+  border-top: 1px solid var(--glass-border);
+  position: fixed;
+  top: var(--navbar-height);
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  box-shadow: none;
+}
+
+/* Left section - contains action buttons */
+.secondary-navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Base button styles for secondary navbar */
+.secondary-navbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+  white-space: nowrap;
+  height: 28px;
+}
+
+.secondary-navbar-btn:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.secondary-navbar-btn:active {
+  background-color: var(--primary);
+  color: var(--text-inverse);
+}
+
+.secondary-navbar-btn svg {
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+/* Specific button styles */
+.upload-data-btn {
+  /* Default styling applied from .secondary-navbar-btn */
+}
+
+.add-image-btn {
+  /* Default styling applied from .secondary-navbar-btn */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .secondary-navbar {
+    padding: 0 16px;
+  }
+
+  .secondary-navbar-left {
+    gap: 8px;
+  }
+
+  .secondary-navbar-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .secondary-navbar-btn span {
+    display: none;
+  }
+
+  .secondary-navbar-btn {
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .secondary-navbar {
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  .secondary-navbar-left {
+    gap: 6px;
+  }
+
+  .secondary-navbar-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+}
+
+/* Dark theme support (optional - if needed beyond CSS variables) */
+:root[data-theme='dark'] .secondary-navbar-btn:hover {
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+:root[data-theme='light'] .secondary-navbar-btn:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
