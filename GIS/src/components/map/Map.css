@@ -2,7 +2,6 @@
   width: 100%;
   height: 100%;
   z-index: 0;
-  background: var(--gis-map-bg);
   transition: width 0.2s ease, height 0.2s ease;
 }
 
@@ -19,9 +18,7 @@
 }
 
 .gis-map .leaflet-control-attribution {
-  background: var(--gis-map-control-bg);
-  color: var(--gis-map-control-text);
-  border: 1px solid var(--gis-map-control-border);
+  background: rgba(255, 255, 255, 0.7);
   border-radius: 4px 0 0 0;
   padding: 2px 6px;
   font-size: 10px;
@@ -31,22 +28,9 @@
   cursor: crosshair;
 }
 
-.gis-map.gis-map-3d .leaflet-map-pane {
-  transform: perspective(900px) rotateX(var(--gis-map-pitch, 0deg));
-  transform-origin: center center;
-  transition: transform 0.2s ease;
-}
-
 .region-hover-leaflet-popup .leaflet-popup-content-wrapper {
   border-radius: 8px;
-  background: var(--gis-surface);
-  color: var(--gis-map-popup-text);
-  border: 1px solid var(--gis-border);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
-}
-
-.region-hover-leaflet-popup .leaflet-popup-tip {
-  background: var(--gis-surface);
 }
 
 .region-hover-leaflet-popup .leaflet-popup-content {
@@ -60,32 +44,32 @@
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
-  color: var(--gis-map-popup-text);
+  color: #0f172a;
 }
 
 .region-hover-popup div {
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  color: var(--gis-map-popup-muted);
+  color: #334155;
 }
 
 .region-hover-popup span {
-  color: var(--gis-map-popup-muted);
+  color: #64748b;
 }
 
 .region-hover-popup .region-comments {
   display: block;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid var(--gis-map-popup-border);
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .region-hover-popup .region-comments span {
   display: block;
   margin-bottom: 4px;
   font-weight: 700;
-  color: var(--gis-map-popup-text);
+  color: #334155;
 }
 
 .region-hover-popup .region-comments ul {
@@ -95,5 +79,117 @@
 
 .region-hover-popup .region-comments li {
   margin: 2px 0;
-  color: var(--gis-map-popup-text);
+  color: #334155;
+}
+
+.gis-hover-layer-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.24);
+}
+
+.gis-hover-layer-popup .leaflet-popup-content {
+  margin: 0;
+  min-width: 240px;
+  max-width: 360px;
+}
+
+.gis-hover-popup {
+  padding: 12px 14px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.gis-hover-popup strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.gis-hover-popup section + section {
+  margin-top: 12px;
+}
+
+.gis-hover-popup h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.gis-hover-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.gis-hover-row span {
+  color: #64748b;
+  flex: 0 0 auto;
+}
+
+.gis-hover-row strong {
+  margin: 0;
+  text-align: right;
+  word-break: break-word;
+  font-size: 12px;
+  color: #0f172a;
+}
+
+.gis-hover-popup pre {
+  margin: 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.gis-hover-empty {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.gis-shape-label.leaflet-tooltip {
+  background: rgba(15, 23, 42, 0.84);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.gis-shape-label.leaflet-tooltip::before {
+  display: none;
+}
+
+.gis-segment-label {
+  background: transparent;
+  border: none;
+}
+
+.gis-segment-label .gis-segment-label-inner {
+  background: rgba(255, 255, 255, 0.96);
+  color: #000000;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(var(--segment-angle, 0deg));
+  transform-origin: center center;
 }

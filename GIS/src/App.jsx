@@ -3,7 +3,6 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { MapProvider } from "./context/MapContext";
 
 import Navbar from "./components/navbar/Navbar";
-import SecondaryNavbar from "./components/navbar/SecondaryNavbar";
 import LeftSidebar from "./components/leftsidebar/LeftSidebar";
 import OperationsPanel from "./components/operations/OperationsPanel";
 import MapContainer from "./components/map/MapContainer";
@@ -118,11 +117,6 @@ const App = () => {
             isLeftOpen={isLeftOpen}
           />
 
-          <SecondaryNavbar
-            onDataUpload={handleDataUpload}
-            onImageUpload={handleImageUpload}
-          />
-
           <div className="app-body">
             <div
               className={`left-sidebar-wrapper ${
@@ -136,6 +130,8 @@ const App = () => {
                 onOpenOperations={() => setIsOperationsPanelOpen(true)}
                 onDatasetSelect={handleDatasetSelect}
                 selectedLayerId={selectedLayerId}
+                onDataUpload={handleDataUpload}
+                onImageUpload={handleImageUpload}
               />
             </div>
 
@@ -149,7 +145,9 @@ const App = () => {
               <MapContainer />
             </div>
 
-            <ChatbotPanel />
+            <div className="chatbot-shell">
+              <ChatbotPanel />
+            </div>
           </div>
         </div>
       </ThemeProvider>

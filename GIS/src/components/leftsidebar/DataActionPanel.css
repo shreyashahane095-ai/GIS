@@ -1,55 +1,56 @@
 .data-action-panel {
   display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  /* Card-like layout */
   flex: 1;
   min-height: 0;
-  width: 100%;
-  flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Rectangular “layer card” styling */
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--sidebar-card-radius);
   background: var(--bg-secondary);
   box-shadow: var(--shadow-sm);
+
+  /* Matches other sidebar cards spacing feel */
+  padding: 0;
+  margin: 0;
+
   animation: panelFadeIn 0.18s ease;
 }
 
-/* Ensure the entire component scrolls if needed */
-.data-action-panel {
-  overflow-y: auto;
-  overflow-x: hidden;
-}
 
-/* Scroll layout fix: ensure flex children can shrink and the panel scrolls */
-.data-action-panel .panel-fixed {
-  min-height: 0;
-}
-
+/* Let the whole DataActionPanel be the scroll container */
+.data-action-panel .panel-fixed,
 .data-action-panel .panel-scroll {
   min-height: 0;
 }
 
-
-
-@keyframes panelFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Ensure the main panel title and fixed sections don't take scrolling area */
 .panel-fixed {
-  display: flex;
   flex-shrink: 0;
+  display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 8px;
+  gap: var(--layout-gutter-xs);
+  padding: var(--layout-gutter-sm) var(--layout-gutter-xs);
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
 }
+
+
+.panel-title-row {
+
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--layout-gutter-xs);
+  padding: var(--layout-gutter-sm) var(--layout-gutter-xs);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
 
 .panel-title-row {
   display: flex;
@@ -70,24 +71,14 @@
   flex: 1;
   min-height: 0;
   flex-direction: column;
-  gap: 14px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 12px 8px;
+  gap: var(--layout-gutter-sm);
+  overflow: visible;
+  padding: var(--layout-gutter-sm) var(--layout-gutter-xs);
 }
 
-.panel-scroll::-webkit-scrollbar {
-  width: 4px;
-}
 
-.panel-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
 
-.panel-scroll::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-  background: var(--border-color);
-}
+
 
 .data-action-panel .search-container {
   display: flex;
@@ -262,8 +253,9 @@
   gap: 3px;
   padding: 8px 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--sidebar-item-radius);
   background: var(--bg-tooltip);
+
   color: var(--text-inverse);
   box-shadow: var(--shadow-md);
   font-size: 10px;
@@ -295,7 +287,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  border-radius: 7px;
+  border-radius: var(--sidebar-item-radius);
+
   background: var(--bg-tertiary);
   color: var(--text-muted);
   font-size: 11px;
@@ -305,6 +298,82 @@
 
 .layer-required-message svg {
   flex-shrink: 0;
+}
+
+.layer-features-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 10px 12px;
+}
+
+.layer-features-error {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--error);
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+.layer-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.layer-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+
+.layer-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--primary);
+  background: var(--primary-light);
+  flex-shrink: 0;
+}
+
+.layer-feature-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layer-feature-name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-feature-meta {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .action-list,
@@ -542,8 +611,9 @@
 @media (max-width: 768px) {
   .panel-fixed,
   .panel-scroll {
-    padding: 10px 8px;
+    padding: 10px var(--layout-gutter-xs);
   }
+
 
   .basic-icon-item {
     width: 30px;
@@ -573,23 +643,26 @@
 }
 
 .data-action-panel .basic-grid {
+  /* Let leftsidebar.css define the grid spacing + card look */
   display: flex;
   flex-wrap: wrap;
-  grid-template-columns: none;
   gap: 6px;
   overflow-x: visible;
 }
 
 .data-action-panel .basic-icon-item {
+  /* Override only layout sizing (keep consistent border/radius from leftsidebar.css) */
   width: 31px;
   min-width: 31px;
   height: 31px;
   min-height: 31px;
   aspect-ratio: auto;
   padding: 0;
-  border-width: 1px;
+  border-width: 2px;
 }
+
 
 .data-action-panel .basic-icon-item:hover {
   box-shadow: none;
 }
+

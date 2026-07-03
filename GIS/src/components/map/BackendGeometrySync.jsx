@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { eventBus, MAP_EVENTS } from "../../services/eventBus";
-import { fetchRegionComments, fetchRegionDetails, sendRegion } from "../../services/regionApi";
+import { deleteRegion, fetchRegionComments, fetchRegionDetails, sendRegion, updateRegion } from "../../services/regionApi";
 import {
   addShapeComment,
   findShapeAtLatLng,
@@ -119,7 +119,7 @@ function BackendGeometrySync() {
   const popupRef = useRef(null);
 
   useEffect(() => {
-    const sendGeometry = async ({ layerId, layerName, type, geojson }) => {
+    const sendGeometry = async ({ layerId, layerName, type, geojson, properties, parentLayerId = null }) => {
       const geometry = getGeometry(geojson);
       if (!geometry) return;
 
@@ -130,7 +130,13 @@ function BackendGeometrySync() {
       }
 
       try {
-        const createResponse = await sendRegion(layerId, normalizedLayerName || type || "Geometry", geometry);
+        const createResponse = await sendRegion(
+          layerId,
+          normalizedLayerName || type || "Geometry",
+          geometry,
+          properties || {},
+          parentLayerId
+        );
         const successMessage =
           createResponse?.message ||
           `${normalizedLayerName || type || "Geometry"} saved successfully.`;
@@ -142,6 +148,8 @@ function BackendGeometrySync() {
           backendId,
           backendSynced: true,
           backendDetails: details,
+          backendComments: comments,
+          skipBackendSync: true,
         });
         const savedShape = registerShape({
           layerId,
@@ -165,6 +173,55 @@ function BackendGeometrySync() {
       }
     };
 
+    const updateGeometry = async ({ layerId, backendId, layerName, geojson, properties, parentLayerId = null, type = null }) => {
+      const geometry = getGeometry(geojson);
+      if (!geometry && type !== "group") return;
+
+      const featureId = backendId || layerId;
+      const normalizedLayerName = layerName?.trim() || "Updated Geometry";
+
+      try {
+        const updateResponse = await updateRegion(
+          featureId,
+          layerId,
+          normalizedLayerName,
+          geometry,
+          properties || {},
+          parentLayerId
+        );
+        const details = (await fetchRegionDetails(geometry)) || updateResponse;
+        const comments = await fetchRegionComments(featureId);
+        updateLayer(layerId, {
+          backendId: featureId,
+          backendSynced: true,
+          backendDetails: details,
+          backendComments: comments,
+          skipBackendSync: true,
+        });
+        if (geometry) {
+          const savedShape = registerShape({
+            layerId,
+            backendId: featureId,
+            layerName: normalizedLayerName,
+            geometry,
+            details,
+            comments,
+          });
+
+          if (savedShape) {
+            regionsRef.current = [
+              savedShape,
+              ...regionsRef.current.filter((region) => region.layerId !== layerId),
+            ];
+          }
+        }
+
+        setNotification(updateResponse?.message || `${normalizedLayerName} updated successfully.`);
+      } catch (error) {
+        setNotification(`Backend update failed: ${error.message || "Unknown error"}`);
+      }
+    };
+
     const unsubscribeCreated = eventBus.subscribe(MAP_EVENTS.GEOMETRY_CREATED, (payload) => {
       if (!DRAWN_SHAPE_TYPES.has(payload?.type)) return;
       sendGeometry({
@@ -172,15 +229,34 @@ function BackendGeometrySync() {
         layerName: payload.layerName || payload.type,
         type: payload.type,
         geojson: payload.geojson,
+        properties: payload.properties,
+        parentLayerId: payload.parentLayerId || null,
       });
     });
 
     const unsubscribeUpdated = eventBus.subscribe(MAP_EVENTS.GEOMETRY_UPDATED, (payload) => {
-      sendGeometry({
+      updateGeometry({
         layerId: payload.layerId,
+        backendId: payload.backendId,
         layerName: payload.layerName || "Updated Geometry",
-        type: "updated",
         geojson: payload.geojson,
+        properties: payload.properties || payload.geojson?.properties || {},
+        parentLayerId: payload.parentLayerId || null,
+        type: payload.type || null,
+      });
+    });
+
+    const unsubscribeLayerRenamed = eventBus.subscribe(MAP_EVENTS.LAYER_RENAMED, (payload) => {
+      if (!payload?.backendId || payload?.skipBackendSync || !payload?.backendSynced) return;
+
+      updateGeometry({
+        layerId: payload.id,
+        backendId: payload.backendId,
+        layerName: payload.name || "Updated Geometry",
+        geojson: payload.data,
+        properties: payload.properties || payload.data?.properties || {},
+        parentLayerId: payload.parentLayerId || null,
+        type: payload.type || null,
       });
     });
 
@@ -196,10 +272,18 @@ function BackendGeometrySync() {
       });
     });
 
-    const unsubscribeDeleted = eventBus.subscribe(MAP_EVENTS.GEOMETRY_DELETED, (payload) => {
+    const unsubscribeDeleted = eventBus.subscribe(MAP_EVENTS.GEOMETRY_DELETED, async (payload) => {
       if (!payload?.layerId) return;
       unregisterShape(payload.layerId);
       regionsRef.current = regionsRef.current.filter((region) => region.layerId !== payload.layerId);
+
+      const featureId = payload.backendId || payload.layerId;
+      try {
+        await deleteRegion(featureId);
+        setNotification("Feature deleted successfully.");
+      } catch (error) {
+        setNotification(`Backend delete failed: ${error.message || "Unknown error"}`);
+      }
     });
 
     const unsubscribeCommentAdded = eventBus.subscribe(MAP_EVENTS.COMMENT_ADDED, (payload) => {
@@ -214,6 +298,7 @@ function BackendGeometrySync() {
     return () => {
       unsubscribeCreated();
       unsubscribeUpdated();
+      unsubscribeLayerRenamed();
       unsubscribeSelected();
       unsubscribeDeleted();
       unsubscribeCommentAdded();

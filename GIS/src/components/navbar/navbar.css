@@ -4,7 +4,7 @@
   justify-content: space-between;
   background: var(--glass-bg);
   color: var(--text-primary);
-  padding: 0 20px;
+  padding: 0 var(--layout-gutter);
   height: 48px;
   border-bottom: 1px solid var(--glass-border);
   position: fixed;
@@ -294,7 +294,7 @@
 @media (max-width: 768px) {
   .navbar {
     height: 50px;
-    padding: 0 12px;
+    padding: 0 var(--layout-gutter-sm);
   }
   
   .nav-item {
@@ -351,7 +351,7 @@
 @media (max-width: 480px) {
   .navbar {
     height: 46px;
-    padding: 0 8px;
+    padding: 0 var(--layout-gutter-xs);
   }
   
   .nav-item {

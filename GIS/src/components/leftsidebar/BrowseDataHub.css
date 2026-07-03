@@ -8,12 +8,14 @@
   position: fixed;
   inset: 0;
   background: transparent;
-  z-index: 98;
+  z-index: 2000;
 }
+
 
 .browse-btn {
   position: relative;
-  z-index: 101;
+  z-index: 3001;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,7 +54,8 @@
 
 .browse-data-hub-popup {
   position: fixed;
-  z-index: 100;
+  z-index: 3000;
+
   display: flex;
   flex-direction: column;
   width: min(260px, calc(100vw - 24px));

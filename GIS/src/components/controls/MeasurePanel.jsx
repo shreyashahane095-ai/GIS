@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Ruler, X, Triangle, Minus } from "lucide-react";
+import { Ruler, Triangle, Minus } from "lucide-react";
 import L from "leaflet";
 import { useMapContext } from "../../context/MapContext";
 import "./MeasurePanel.css";
@@ -56,8 +56,9 @@ function MeasurePanel() {
 
   useEffect(() => {
     if (!map || !measureMode) return;
-
-    clear();
+    queueMicrotask(() => {
+      clear();
+    });
 
     const onClick = (e) => {
       pointsRef.current.push(e.latlng);

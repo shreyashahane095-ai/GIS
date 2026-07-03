@@ -1,25 +1,32 @@
 /**
  * API Configuration
- * 
- * Centralised API endpoint configuration.
- * All endpoints are configurable — no hardcoded URLs.
+ *
+ * Centralised API endpoint configuration for the live backend.
+ * This app only uses layers and features here.
  */
 
 /** Base URL for the backend API. Override with VITE_API_BASE_URL when needed. */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://10.172.178.101:8001';
 
 /** API Endpoints */
 const API_ENDPOINTS = {
-  /** Send selected/drawn polygon geometry to the backend */
-  SEND_REGION: `${API_BASE_URL}/polygon`,
+  /** List or create layers */
+  LAYERS: `${API_BASE_URL}/layers`,
 
-  /** List saved drawn geometries from the backend */
-  FETCH_REGIONS: import.meta.env.VITE_FETCH_REGIONS_ENDPOINT || `${API_BASE_URL}/polygons`,
-
-  /** Store or list feature records such as comments */
+  /** List or create top-level features */
   FEATURES: `${API_BASE_URL}/features`,
 
-  /** Optional endpoint for detailed selected-region information. */
+  /** Features belonging to a specific layer */
+  LAYER_FEATURES: (layerId) => `${API_BASE_URL}/layers/${encodeURIComponent(layerId)}/features`,
+
+  /** Legacy aliases kept so the existing layer/feature flow keeps working. */
+  SEND_REGION: `${API_BASE_URL}/features`,
+  FETCH_REGIONS: `${API_BASE_URL}/layers`,
+  SAVE_LAYER_GROUP: `${API_BASE_URL}/layers`,
+  UPDATE_REGION: `${API_BASE_URL}/features`,
+  DELETE_REGION: `${API_BASE_URL}/features`,
+
+  /** Not used for the new layer/feature backend. */
   FETCH_REGION_DETAILS: import.meta.env.VITE_REGION_DETAILS_ENDPOINT || '',
 };
 

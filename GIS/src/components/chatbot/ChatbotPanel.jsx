@@ -12,7 +12,7 @@ import "./ChatbotPanel.css";
 const ChatbotPanel = () => {
   const { isDarkMode } = useTheme(); // ensures re-render on theme change (via data-theme)
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+
 
   const [chatbotWidth, setChatbotWidth] = useState(() => {
     const raw = window.localStorage.getItem("gis_chatbot_width");
@@ -21,21 +21,15 @@ const ChatbotPanel = () => {
     return 360;
   });
 
-  const [isResizing, setIsResizing] = useState(false);
+  // Resize UI removed
+
 
   useEffect(() => {
     window.localStorage.setItem("gis_chatbot_width", String(chatbotWidth));
   }, [chatbotWidth]);
 
 
-  const [messages, setMessages] = useState(() => [
-    {
-      id: "welcome",
-      role: "assistant",
-      text: "Hi! I’m your AI Assistant. Ask me about the map, layers, or analysis.",
-      createdAt: Date.now(),
-    },
-  ]);
+  const [messages, setMessages] = useState(() => []);
 
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -48,16 +42,7 @@ const ChatbotPanel = () => {
     return input.trim().length > 0 && !isTyping;
   }, [input, isTyping]);
 
-  useEffect(() => {
-    if (!isCollapsed) {
-      // Restore focus to input when expanding.
-      // Small delay helps after CSS animation triggers.
-      const t = setTimeout(() => {
-        inputRef.current?.focus?.();
-      }, 150);
-      return () => clearTimeout(t);
-    }
-  }, [isCollapsed]);
+
 
   useEffect(() => {
     // Auto-scroll to bottom when new message arrives / typing updates.
@@ -94,7 +79,7 @@ const ChatbotPanel = () => {
     } else if (lower.includes("theme") || lower.includes("dark") || lower.includes("light")) {
       response = "You can toggle between Light and Dark using the theme button in the top navbar. The chatbot follows the app theme automatically.";
     } else if (lower.includes("upload") || lower.includes("image")) {
-      response = "Use the Upload controls in the secondary navbar to add datasets/files. After upload, they will appear as layers you can toggle.";
+      response = "Use the Upload Data and Add Image buttons in the left sidebar to add datasets/files. After upload, they will appear as layers you can toggle.";
     }
 
     await new Promise((r) => setTimeout(r, 450));
@@ -119,78 +104,114 @@ const ChatbotPanel = () => {
     }
   };
 
-  const applyWidth = (next) => {
-    const min = 280;
-    const max = 560;
-    const clamped = Math.max(min, Math.min(max, next));
-    setChatbotWidth(clamped);
+  // Resize handle removed (no side scrolling / drag-to-resize UI)
+
+
+  const showEmptyState = messages.length === 0;
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setInput("");
+    setIsTyping(false);
+
+    const t = setTimeout(() => {
+      inputRef.current?.focus?.();
+    }, 50);
+
+    return () => clearTimeout(t);
   };
 
-  const startResize = (e) => {
-    if (e.button !== 0) return;
-    setIsResizing(true);
-    e.preventDefault();
-
-    const startX = e.clientX;
-    const startWidth = chatbotWidth;
-
-    const onMove = (ev) => {
-      const dx = startX - ev.clientX; // dragging left increases width
-      applyWidth(startWidth + dx);
-    };
-
-    const onUp = () => {
-      setIsResizing(false);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-    };
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+  const handleChipClick = (text) => {
+    setInput(text);
+    const t = setTimeout(() => {
+      inputRef.current?.focus?.();
+    }, 50);
+    return () => clearTimeout(t);
   };
 
   return (
     <section
-      className={`chatbot-root ${isCollapsed ? "collapsed" : "expanded"} ${isResizing ? "resizing" : ""}`}
+      className={`chatbot-root`}
+
       aria-label="AI Chatbot"
       data-theme={isDarkMode ? "dark" : "light"}
-      style={{ width: chatbotWidth, "--chatbot-width": `${chatbotWidth}px` }}
+      style={{ "--chatbot-width": `${chatbotWidth}px` }}
     >
-      <div className="chatbot-card glass-panel" data-resizing={isResizing ? "true" : "false"}>
-        <button
-          type="button"
-          className="chatbot-resize-handle"
-          onPointerDown={startResize}
-          aria-label="Resize AI assistant panel"
-          title="Drag to resize"
-        />
-        <header className="chatbot-header">
-          <div className="chatbot-title">
-            <span className="chatbot-icon" aria-hidden="true">
+      <div className="chatbot-card glass-panel">
+
+
+
+        <header className="chatbot-header" role="banner">
+          <div className="chatbot-header-left">
+            <div className="chatbot-avatar" aria-hidden="true">
               <Icon icon="mdi:robot-outline" width={18} height={18} />
-            </span>
-            <span>AI Assistant</span>
+            </div>
+
+            <div className="chatbot-header-text">
+              <div className="chatbot-bot-name">ChatBot</div>
+              <div className="chatbot-bot-subtitle">Your Analytical AI Bot</div>
+            </div>
           </div>
 
+          <div className="chatbot-actions" aria-label="Chatbot actions">
+            <button
+              type="button"
+              className="chatbot-new-chat-btn"
+              onClick={handleNewChat}
+              aria-label="Start a new chat"
+              title="New Chat"
+            >
+              <Icon
+                icon="mdi:plus"
+                width={16}
+                height={16}
+                aria-hidden="true"
+              />
+            </button>
 
+          </div>
         </header>
 
-        <div className="chatbot-history" ref={historyRef}>
-          <div className="chatbot-conversation">
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`chatbot-message ${m.role}`}
-                role="article"
-                aria-label={m.role === "user" ? "User message" : "Assistant message"}
-              >
-                <div className="chatbot-bubble">{m.text}</div>
-              </div>
-            ))}
+        <div className="chatbot-tabs" role="tablist" aria-label="Chat tabs">
+          <button type="button" className="chatbot-tab active" role="tab" aria-selected="true">
+            Current Chat
+          </button>
+          <button type="button" className="chatbot-tab" role="tab" aria-selected="false">
+            History
+          </button>
+        </div>
 
-            {isTyping && (
+        <div className="chatbot-history" ref={historyRef} aria-live="polite">
+          <div className="chatbot-conversation">
+            {showEmptyState ? (
+              <div className="chatbot-empty-state" role="status" aria-live="polite">
+                <div className="chatbot-empty-avatar" aria-hidden="true">
+                  <Icon icon="mdi:robot-outline" width={22} height={22} />
+                </div>
+
+                <div className="chatbot-empty-greeting">
+                  <span className="chatbot-empty-greet-text">Hey </span>
+                  <span className="chatbot-empty-username">User</span>
+                  <span className="chatbot-empty-greet-text"> 👋</span>
+                </div>
+
+                <div className="chatbot-empty-subtitle">Ask me about your data.</div>
+
+              </div>
+            ) : (
+              messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`chatbot-message ${m.role}`}
+                  role="article"
+                  aria-label={m.role === "user" ? "User message" : "Assistant message"}
+                >
+                  <div className="chatbot-bubble">{m.text}</div>
+                </div>
+              ))
+            )}
+
+            {isTyping && !showEmptyState && (
               <div className="chatbot-message assistant" role="status" aria-live="polite">
                 <div className="chatbot-bubble">
                   <span className="typing-dots" aria-label="Assistant is typing">
@@ -204,17 +225,17 @@ const ChatbotPanel = () => {
           </div>
         </div>
 
-
-        <footer className="chatbot-input-row">
+        <footer className="chatbot-input-row" role="form" aria-label="Chat input area">
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             className="chatbot-input"
-            placeholder="Ask something..."
+            placeholder="Ask anything..."
             aria-label="Chat input"
           />
+
           <button
             type="button"
             className="chatbot-send-btn"
@@ -227,8 +248,6 @@ const ChatbotPanel = () => {
           </button>
         </footer>
       </div>
-
-
     </section>
   );
 };

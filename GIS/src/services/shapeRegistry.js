@@ -10,12 +10,6 @@ function getGeometry(geojson) {
   return null;
 }
 
-function flattenCoordinates(coords) {
-  if (!Array.isArray(coords)) return [];
-  if (coords.length > 0 && typeof coords[0] === "number") return [coords];
-  return coords.flatMap(flattenCoordinates);
-}
-
 function pointInRing(point, ring) {
   const [lng, lat] = point;
   let inside = false;

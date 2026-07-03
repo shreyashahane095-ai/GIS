@@ -1,13 +1,11 @@
 import { useEffect } from "react";
 import Map from "./Map";
-import Controls from "../Controls/Controls";
-import BottomToolbar from "../BottomToolbar/BottomToolbar";
-import BasemapSwitcher from "../Basemap/BasemapSwitcher";
-import LayerManager from "../Layers/LayerManager";
-import PopupMenus from "../Popup/PopupMenus";
-import SearchPanel from "../Controls/SearchPanel";
-import MeasurePanel from "../Controls/MeasurePanel";
-import SettingsPanel from "../Controls/SettingsPanel";
+import Controls from "../controls/Controls";
+import BottomToolbar from "../bottomtoolbar/BottomToolbar";
+import BasemapSwitcher from "../basemap/BasemapSwitcher";
+import PopupMenus from "../popup/PopupMenus";
+import SearchPanel from "../controls/SearchPanel";
+import MeasurePanel from "../controls/MeasurePanel";
 import BackendGeometrySync from "./BackendGeometrySync";
 import AnnotationController from "./AnnotationController";
 import { useMapContext } from "../../context/MapContext";
@@ -15,6 +13,7 @@ import "./MapContainer.css";
 
 function MapContainer() {
   const {
+    map,
     activeTool,
     activeSubTool,
     measureMode,
@@ -25,7 +24,6 @@ function MapContainer() {
     setActiveSubTool,
     setMeasureMode,
     setShowSearch,
-    setSettingsOpen,
   } = useMapContext();
 
   useEffect(() => {
@@ -35,12 +33,11 @@ function MapContainer() {
         setActiveSubTool(null);
         setMeasureMode(null);
         setShowSearch(false);
-        setSettingsOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setActiveTool, setActiveSubTool, setMeasureMode, setShowSearch, setSettingsOpen]);
+  }, [setActiveTool, setActiveSubTool, setMeasureMode, setShowSearch]);
 
   const getActiveStatus = () => {
     if (measureMode) return `Measuring ${measureMode}`;
@@ -64,6 +61,19 @@ function MapContainer() {
 
   return (
     <div className="map-container">
+      {(!map || !activeTool) && (
+        <div className="map-loading-overlay" aria-live="polite">
+          <div className="map-loading-box">
+            <div className="map-loading-spinner" />
+            <div style={{ fontWeight: 700, fontSize: 13, opacity: 0.95 }}>
+              Loading map...
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>
+              Initializing Leaflet & layers
+            </div>
+          </div>
+        </div>
+      )}
       <BackendGeometrySync />
       <Map />
       <AnnotationController />
@@ -86,11 +96,9 @@ function MapContainer() {
       <Controls />
       <BottomToolbar />
       <BasemapSwitcher />
-      <LayerManager />
       <PopupMenus />
       <SearchPanel />
       <MeasurePanel />
-      <SettingsPanel />
     </div>
   );
 }

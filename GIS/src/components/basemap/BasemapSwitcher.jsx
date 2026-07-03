@@ -24,6 +24,7 @@ function BasemapSwitcher() {
           <h6 className="fw-bold mb-3">Basemap</h6>
           <div className="basemap-grid">
             {basemaps.map((b) => (
+
               <button
                 key={b.id}
                 className={`basemap-item ${basemap === b.id ? "active" : ""}`}

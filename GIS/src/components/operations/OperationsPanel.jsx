@@ -114,7 +114,7 @@ const OperationsPanel = ({ isOpen, onClose }) => {
           </div>
 
           {/* Geometry Section */}
-          <h3 className="section-title" style={{ marginTop: '20px' }}>Geometry</h3>
+          <h3 className="section-title spaced">Geometry</h3>
           
           {/* Geometry Operation Cards Grid */}
           <div className="operations-grid">

@@ -319,6 +319,9 @@ html, body {
   --gis-map-popup-text: #0f172a;
   --gis-map-popup-muted: #64748b;
   --gis-map-popup-border: rgba(148, 163, 184, 0.35);
+  --layout-gutter: 16px;
+  --layout-gutter-sm: 12px;
+  --layout-gutter-xs: 8px;
 }
 
 [data-theme="dark"] {

@@ -94,16 +94,6 @@ function BottomToolbar() {
   } = useMapContext();
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  useEffect(() => {
-    if (openDropdown && openDropdown !== activeTool) {
-      setOpenDropdown(null);
-    }
-  }, [activeTool, openDropdown]);
-
-  const toggleDropdown = (name) => {
-    setOpenDropdown((prev) => (prev === name ? null : name));
-  };
-
   const handleToolClick = (tool, items) => {
     if (activeTool === tool && openDropdown === tool) {
       setOpenDropdown(null);
@@ -151,7 +141,7 @@ function BottomToolbar() {
           <Dropdown
             items={pointerTools}
             activeItem={activeSubTool}
-            isOpen={openDropdown === "pointer"}
+            isOpen={openDropdown === "pointer" && activeTool === "pointer"}
             onSelect={(id) => handleSubSelect("pointer", id)}
             onClose={() => setOpenDropdown(null)}
           />
@@ -170,7 +160,7 @@ function BottomToolbar() {
           <Dropdown
             items={drawTools}
             activeItem={activeSubTool}
-            isOpen={openDropdown === "draw"}
+            isOpen={openDropdown === "draw" && activeTool === "draw"}
             onSelect={(id) => handleSubSelect("draw", id)}
             onClose={() => setOpenDropdown(null)}
           />
@@ -189,7 +179,7 @@ function BottomToolbar() {
           <Dropdown
             items={textTools}
             activeItem={activeSubTool}
-            isOpen={openDropdown === "text"}
+            isOpen={openDropdown === "text" && activeTool === "text"}
             onSelect={(id) => handleSubSelect("text", id)}
             onClose={() => setOpenDropdown(null)}
           />

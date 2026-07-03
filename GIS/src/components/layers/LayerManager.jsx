@@ -1,168 +1,270 @@
-import { useState } from "react";
-import { Layers, X, Eye, EyeOff, Trash2, Edit2, Check, GripVertical, Maximize2, Focus } from "lucide-react";
-import { useMapContext } from "../../context/MapContext";
+import { useMemo, useState } from "react";
+import { Eye, EyeOff, Trash2, Layers, Pencil, Maximize2 } from "lucide-react";
+import LayerEditModal from "./LayerEditModal";
 import "./LayerManager.css";
 
-function LayerManager() {
-  const {
-    layers,
-    showLayerManager,
-    setShowLayerManager,
-    toggleLayerVisibility,
-    removeLayer,
-    renameLayer,
-    setLayerOpacity,
-    zoomToLayer,
-    selectLayer,
-    activeLayerId,
-  } = useMapContext();
-  const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState("");
+function buildLayerTree(layers) {
+  const nodes = new Map();
+  const roots = [];
 
-  const startEdit = (layer) => {
-    setEditingId(layer.id);
-    setEditName(layer.name);
-  };
+  layers.forEach((layer) => {
+    nodes.set(layer.id, { ...layer, children: [] });
+  });
 
-  const saveEdit = (id) => {
-    renameLayer(id, editName);
-    setEditingId(null);
-  };
+  layers.forEach((layer) => {
+    const node = nodes.get(layer.id);
+    const parent = layer.parentLayerId ? nodes.get(layer.parentLayerId) : null;
+    if (parent) {
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
 
-  const soloLayer = (soloId) => {
-    layers.forEach((l) => {
-      if (l.id === soloId && !l.visible) toggleLayerVisibility(l.id);
-      if (l.id !== soloId && l.visible) toggleLayerVisibility(l.id);
-    });
-  };
-
-  if (!showLayerManager) {
-    return (
-      <button
-        className="gis-btn layer-toggle"
-        onClick={() => setShowLayerManager(true)}
-        aria-label="Layers"
-      >
-        <Layers size={22} />
-      </button>
-    );
+  const hasRealHierarchy = layers.some((layer) => layer.parentLayerId && nodes.has(layer.parentLayerId));
+  if (!hasRealHierarchy && layers.length > 1) {
+    return [
+      {
+        id: "__saved_layers_group__",
+        name: "Saved Layers",
+        type: "group",
+        visible: true,
+        children: roots,
+        syntheticGroup: true,
+      },
+    ];
   }
 
-  return (
-    <div className="layer-manager glass-panel gis-fade-in">
-      <div className="layer-manager-header">
-        <div className="d-flex align-items-center gap-2">
-          <Layers size={18} />
-          <h6 className="m-0 fw-bold">Layers</h6>
-        </div>
-        <button
-          className="btn-close"
-          onClick={() => setShowLayerManager(false)}
-          aria-label="Close"
-        />
-      </div>
+  return roots;
+}
 
-      <div className="layer-list gis-scrollbar">
-        {layers.length === 0 && (
-          <div className="text-muted small p-3 text-center">
-            No layers yet. Use the draw tools to create features.
+function LayerNode({
+  node,
+  depth,
+  activeLayerId,
+  onSelectLayer,
+  onToggleLayerVisibility,
+  onEditLayer,
+  onZoomToLayer,
+  onRemoveLayer,
+}) {
+  const children = node.children || [];
+
+  return (
+    <>
+      <div
+        className={`sidebar-layer-item ${activeLayerId === node.id ? "active" : ""} ${node.visible === false ? "hidden" : ""} ${depth > 0 ? "child" : ""} ${node.syntheticGroup ? "group" : ""}`}
+        style={{ marginLeft: depth > 0 ? `${depth * 14}px` : 0 }}
+        onClick={() => onSelectLayer?.(node.id)}
+      >
+        <div className="sidebar-layer-row">
+          {!node.syntheticGroup && (
+            <button
+              className="sidebar-layer-visibility"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLayerVisibility?.(node.id);
+              }}
+              aria-label={node.visible ? "Hide layer" : "Show layer"}
+            >
+              {node.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+            </button>
+          )}
+
+          <div className="sidebar-layer-meta">
+            <span className="sidebar-layer-name">{node.name}</span>
+            <span className="sidebar-layer-type">
+              {node.type}
+              {node.category ? ` · ${node.category}` : ""}
+            </span>
           </div>
-        )}
-        {layers.map((layer) => (
-          <div
-            key={layer.id}
-            className={`layer-item ${activeLayerId === layer.id ? "active" : ""}`}
-            onClick={() => selectLayer(layer.id)}
-          >
-            <div className="layer-row">
-              <GripVertical size={14} className="text-muted" />
+
+          {!node.syntheticGroup && (
+            <>
               <button
-                className="layer-visibility"
+                className="sidebar-layer-action"
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleLayerVisibility(layer.id);
+                  onEditLayer?.(node);
                 }}
-                aria-label={layer.visible ? "Hide layer" : "Show layer"}
+                aria-label="Edit layer"
+                title="Edit layer"
               >
-                {layer.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                <Pencil size={14} />
               </button>
 
-              {editingId === layer.id ? (
-                <input
-                  className="form-control form-control-sm layer-name-input"
-                  value={editName}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onBlur={() => saveEdit(layer.id)}
-                  onKeyDown={(e) => e.key === "Enter" && saveEdit(layer.id)}
-                  autoFocus
-                />
-              ) : (
-                <span className="layer-name">{layer.name}</span>
-              )}
-
               <button
-                className="layer-action"
+                className="sidebar-layer-action"
                 onClick={(e) => {
                   e.stopPropagation();
-                  zoomToLayer(layer.id);
+                  onZoomToLayer?.(node.id);
                 }}
-                aria-label="Zoom to layer"
-                title="Zoom to layer"
+                aria-label="Zoom to fit"
+                title="Zoom to fit"
               >
                 <Maximize2 size={14} />
               </button>
+
               <button
-                className="layer-action"
+                className="sidebar-layer-action text-danger"
                 onClick={(e) => {
                   e.stopPropagation();
-                  soloLayer(layer.id);
+                  onRemoveLayer?.(node.id);
                 }}
-                aria-label="Show only this layer"
-                title="Show only this layer"
-              >
-                <Focus size={14} />
-              </button>
-              <button
-                className="layer-action"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startEdit(layer);
-                }}
-                aria-label="Rename"
-                title="Rename"
-              >
-                <Edit2 size={14} />
-              </button>
-              <button
-                className="layer-action text-danger"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeLayer(layer.id);
-                }}
-                aria-label="Delete"
-                title="Delete"
+                aria-label="Delete layer"
+                title="Delete layer"
               >
                 <Trash2 size={14} />
               </button>
-            </div>
-            <div className="layer-opacity">
-              <span className="text-muted small">Opacity</span>
-              <input
-                type="range"
-                className="form-range form-range-sm gis-slider"
-                min="0"
-                max="1"
-                step="0.05"
-                value={layer.opacity}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => setLayerOpacity(layer.id, Number(e.target.value))}
-              />
-            </div>
-          </div>
-        ))}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+      {children.map((child) => (
+        <LayerNode
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          activeLayerId={activeLayerId}
+          onSelectLayer={onSelectLayer}
+          onToggleLayerVisibility={onToggleLayerVisibility}
+          onEditLayer={onEditLayer}
+          onZoomToLayer={onZoomToLayer}
+          onRemoveLayer={onRemoveLayer}
+        />
+      ))}
+    </>
+  );
+}
+
+function LayerManager({
+  layers = [],
+  activeLayerId = null,
+  onSelectLayer,
+  onToggleLayerVisibility,
+  onEditLayer,
+  onZoomToLayer,
+  onRemoveLayer,
+}) {
+  const [editingLayer, setEditingLayer] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    type: "",
+    color: "#2563eb",
+    opacity: 1,
+  });
+  const [editErrors, setEditErrors] = useState({
+    name: "",
+    type: "",
+  });
+
+  const openEditModal = (layer) => {
+    if (!layer) return;
+    setEditingLayer(layer);
+    setEditForm({
+      name: layer.name || "",
+      type: layer.type || "",
+      color: layer.color || layer.properties?.color || "#2563eb",
+      opacity: typeof layer.opacity === "number" ? layer.opacity : 1,
+    });
+    setEditErrors({ name: "", type: "" });
+  };
+
+  const closeEditModal = () => {
+    setEditingLayer(null);
+    setEditErrors({ name: "", type: "" });
+  };
+
+  const saveEdit = () => {
+    if (!editingLayer) return;
+
+    const name = editForm.name.trim();
+    const type = editForm.type.trim();
+    const color = /^#[0-9a-fA-F]{6}$/.test(editForm.color)
+      ? editForm.color
+      : editingLayer.color || editingLayer.properties?.color || "#2563eb";
+    const opacity = Number.isFinite(Number(editForm.opacity))
+      ? Math.min(1, Math.max(0, Number(editForm.opacity)))
+      : 1;
+
+    const nextErrors = {
+      name: name ? "" : "This information is required.",
+      type: type ? "" : "This information is required.",
+    };
+    if (nextErrors.name || nextErrors.type) {
+      setEditErrors(nextErrors);
+      return;
+    }
+
+    onEditLayer?.(editingLayer.id, {
+      name,
+      type,
+      color,
+      opacity,
+      properties: {
+        ...(editingLayer.properties || {}),
+        name,
+        type,
+        color,
+        opacity,
+      },
+    });
+    closeEditModal();
+  };
+
+  const topLevelLayers = useMemo(
+    () => buildLayerTree(layers),
+    [layers]
+  );
+
+  return (
+    <section className="sidebar-layer-manager">
+      <div className="sidebar-layer-header">
+        <div className="sidebar-layer-title">
+          <Layers size={18} />
+          <h3>Layers</h3>
+        </div>
+        <span className="sidebar-layer-count">{layers.length}</span>
+      </div>
+
+      <div className="sidebar-layer-list">
+        {layers.length === 0 && (
+          <div className="sidebar-layer-empty">
+            No layers yet. Upload a file or add a dataset to see it here.
+          </div>
+        )}
+        {topLevelLayers.map((layer) => (
+            <LayerNode
+              key={layer.id}
+              node={layer}
+              depth={0}
+              activeLayerId={activeLayerId}
+              onSelectLayer={onSelectLayer}
+              onToggleLayerVisibility={onToggleLayerVisibility}
+              onEditLayer={openEditModal}
+              onZoomToLayer={onZoomToLayer}
+              onRemoveLayer={onRemoveLayer}
+            />
+          ))}
+      </div>
+
+      <LayerEditModal
+        open={Boolean(editingLayer)}
+        title={`Edit ${editingLayer?.name || "layer"}`}
+        values={editForm}
+        errors={editErrors}
+        onChange={(next) => {
+          setEditForm((prev) => ({ ...prev, ...next }));
+          setEditErrors((prev) => ({
+            ...prev,
+            ...(next.name !== undefined ? { name: "" } : {}),
+            ...(next.type !== undefined ? { type: "" } : {}),
+          }));
+        }}
+        onSubmit={saveEdit}
+        onCancel={closeEditModal}
+      />
+    </section>
   );
 }
 

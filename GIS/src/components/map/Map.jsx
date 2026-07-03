@@ -21,10 +21,16 @@ import {
 import { eventBus, MAP_EVENTS } from "../../services/eventBus";
 import {
   createLeafletLayerFromBackendLayer,
-  normalizeBackendLayer,
+  bindShapeLabel,
+  hydrateBackendLayers,
 } from "../../services/layerHydration";
-import { fetchSavedRegions } from "../../services/regionApi";
+import { fetchSavedRegions, saveLayerGroup } from "../../services/regionApi";
+import { getAllFeatures } from "../../services/featuresApi";
+import { layerToGeoJSON } from "../../utils/geoJsonUtils";
+import ShapeMetadataModal from "./ShapeMetadataModal";
 import "./Map.css";
+
+
 
 const sampleGeoJSON = {
   type: "FeatureCollection",
@@ -47,6 +53,57 @@ const sampleGeoJSON = {
     },
   ],
 };
+
+function getDefaultShapeColor(type) {
+  switch (type) {
+    case "line":
+    case "polyline":
+      return "#f97316";
+    case "circle":
+      return "#16a34a";
+    case "rectangle":
+    case "polygon":
+      return "#2563eb";
+    case "point":
+    case "marker":
+      return "#dc2626";
+    default:
+      return "#8b5cf6";
+  }
+}
+
+function formatSegmentDistance(meters) {
+  if (!Number.isFinite(meters)) return "";
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+  return `${meters.toFixed(1)} m`;
+}
+
+function getSegmentMidpoint(a, b) {
+  return [(a.lat + b.lat) / 2, (a.lng + b.lng) / 2];
+}
+
+function getSegmentAngle(map, a, b) {
+  if (!map || !a || !b) return 0;
+  const start = map.latLngToLayerPoint(a);
+  const end = map.latLngToLayerPoint(b);
+  const rawAngle = (Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI;
+  if (rawAngle > 90) return rawAngle - 180;
+  if (rawAngle < -90) return rawAngle + 180;
+  return rawAngle;
+}
+
+function createSegmentLabel(position, text, angle) {
+  return L.marker(position, {
+    interactive: false,
+    keyboard: false,
+    icon: L.divIcon({
+      className: "gis-segment-label",
+      html: `<div class="gis-segment-label-inner" style="--segment-angle:${angle}deg">${text}</div>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+    }),
+  });
+}
 
 function MapEvents() {
   const { setMap, setZoom } = useMapContext();
@@ -277,6 +334,7 @@ function DrawController() {
     activeSubTool,
     drawLayerGroupRef,
     addLayer,
+    getNextLayerId,
     setIsDrawing,
     activeLayerId,
     layers,
@@ -289,9 +347,20 @@ function DrawController() {
   const drawPointsRef = useRef([]);
   const dragStartRef = useRef(null);
   const activeSubToolRef = useRef(activeSubTool);
+  const pendingShapeRef = useRef(null);
   const hasInitGeoJSON = useRef(false);
   const hasRestoredBackendLayers = useRef(false);
   const [backendHydrated, setBackendHydrated] = useState(false);
+  const [pendingShape, setPendingShape] = useState(null);
+  const [shapeForm, setShapeForm] = useState({
+    name: "",
+    category: "",
+    color: DRAW_STYLES.default.color,
+  });
+  const [shapeErrors, setShapeErrors] = useState({
+    name: "",
+    category: "",
+  });
 
   useEffect(() => {
     activeSubToolRef.current = activeSubTool;
@@ -361,13 +430,33 @@ function DrawController() {
         }
       }
 
-      points.forEach((point) => {
+      const segmentPairs = [];
+      for (let index = 1; index < previewPoints.length; index += 1) {
+        segmentPairs.push([previewPoints[index - 1], previewPoints[index]]);
+      }
+      if (activeSubToolRef.current === "polygon" && previewPoints.length >= 3) {
+        segmentPairs.push([previewPoints[previewPoints.length - 1], previewPoints[0]]);
+      }
+
+      segmentPairs.forEach(([start, end]) => {
+        const distance = formatSegmentDistance(start.distanceTo(end));
+        if (!distance) return;
+        draftLayer.addLayer(
+          createSegmentLabel(
+            getSegmentMidpoint(start, end),
+            distance,
+            getSegmentAngle(map, start, end)
+          )
+        );
+      });
+
+      points.forEach((point, index) => {
         draftLayer.addLayer(
           L.circleMarker(point, {
-            radius: 5,
-            color: "#ffffff",
+            radius: index === 0 ? 6 : 5,
+            color: index === 0 ? "#f97316" : "#ffffff",
             weight: 2,
-            fillColor: DRAW_STYLES.default.color,
+            fillColor: index === 0 ? "#f97316" : DRAW_STYLES.default.color,
             fillOpacity: 1,
             interactive: false,
           })
@@ -390,44 +479,140 @@ function DrawController() {
     []
   );
 
-  const commitDrawLayer = useCallback(
-    (layer, type, customName = null) => {
+  const applyShapeMetadata = useCallback((layer, type, color) => {
+    if (!layer) return;
+
+    if (type === "point" || type === "marker") {
+      if (layer.setIcon) {
+        layer.setIcon(
+          new L.DivIcon({
+            className: "gis-draw-marker",
+            html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+          })
+        );
+      }
+      return;
+    }
+
+    if (layer.setStyle) {
+      layer.setStyle({
+        color,
+        fillColor: color,
+        fillOpacity: type === "line" || type === "polyline" ? 0 : 0.15,
+      });
+    }
+  }, []);
+
+  const openMetadataPrompt = useCallback(
+    (layer, type) => {
       const drawLayerGroup = ensureDrawLayerGroup();
       if (!layer || !drawLayerGroup) return;
 
-      const promptedName = customName ?? window.prompt(`Enter ${type} name`);
-      const name = promptedName?.trim();
-      if (!name) {
-        setNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} name is required. Shape was not created.`);
-        return;
-      }
-
+      const layerId = getNextLayerId();
+      const parentLayerId = layers.find((layer) => layer.type === "group")?.id || null;
       drawLayerGroup.addLayer(layer);
-      if (layer.bindPopup) {
-        layer.bindPopup(name);
-      }
-      const newLayer = {
-        id: `${type}-${Date.now()}`,
-        name,
-        type,
-        visible: true,
-        opacity: 1,
-        layer,
-        data: layer.toGeoJSON ? layer.toGeoJSON() : null,
-        parentLayerId: activeLayerId,
-      };
+      const defaultColor = getDefaultShapeColor(type);
+      applyShapeMetadata(layer, type, defaultColor);
 
-      addLayer(newLayer);
-      eventBus.publish(MAP_EVENTS.DRAWING_COMPLETED, {
-        layerId: newLayer.id,
-        layerName: newLayer.name,
-        parentLayerId: activeLayerId || null,
-        type,
-        geojson: newLayer.data,
+      setShapeForm({
+        name: "",
+        category: "",
+        color: defaultColor,
       });
+      setShapeErrors({ name: "", category: "" });
+      pendingShapeRef.current = { layer, type, layerId, parentLayerId };
+      setPendingShape({ layer, type, layerId, parentLayerId });
     },
-    [activeLayerId, addLayer, ensureDrawLayerGroup]
+    [applyShapeMetadata, ensureDrawLayerGroup, getNextLayerId, layers]
   );
+
+  const finalizePendingShape = useCallback(() => {
+    const current = pendingShapeRef.current;
+    if (!current) return;
+
+    const name = shapeForm.name.trim();
+    const category = shapeForm.category.trim();
+    const defaultColor = getDefaultShapeColor(current.type);
+    const color = /^#[0-9a-fA-F]{6}$/.test(shapeForm.color)
+      ? shapeForm.color
+      : defaultColor;
+    const nextErrors = {
+      name: name ? "" : "This information is required.",
+      category: category ? "" : "This information is required.",
+    };
+    if (nextErrors.name || nextErrors.category) {
+      setShapeErrors(nextErrors);
+      return;
+    }
+
+    setShapeErrors({ name: "", category: "" });
+
+    applyShapeMetadata(current.layer, current.type, color);
+
+    const properties = { name, category, color };
+    if (current.layer.feature) {
+      current.layer.feature.properties = {
+        ...(current.layer.feature.properties || {}),
+        ...properties,
+      };
+    } else {
+      current.layer.feature = {
+        type: "Feature",
+        properties,
+        geometry: null,
+      };
+    }
+
+    if (current.layer.bindPopup) {
+      current.layer.bindPopup(
+        `<div style="min-width:160px"><strong>${name}</strong><div style="font-size:12px;opacity:0.8">${category}</div></div>`
+      );
+    }
+
+    bindShapeLabel(current.layer, name, current.type);
+
+    const newLayer = {
+      id: current.layerId,
+      name,
+      type: current.type,
+      visible: true,
+      opacity: 1,
+      layer: current.layer,
+      properties,
+      data: layerToGeoJSON(current.layer, properties),
+      parentLayerId: current.parentLayerId || null,
+    };
+
+    addLayer(newLayer);
+    eventBus.publish(MAP_EVENTS.DRAWING_COMPLETED, {
+      layerId: newLayer.id,
+      layerName: newLayer.name,
+      parentLayerId: current.parentLayerId || null,
+      type: current.type,
+      geojson: newLayer.data,
+      properties,
+    });
+
+    pendingShapeRef.current = null;
+    setPendingShape(null);
+  }, [addLayer, applyShapeMetadata, shapeForm]);
+
+  const cancelPendingShape = useCallback(() => {
+    const current = pendingShapeRef.current;
+    if (current?.layer) {
+      const drawLayerGroup = ensureDrawLayerGroup();
+      if (drawLayerGroup?.hasLayer(current.layer)) {
+        drawLayerGroup.removeLayer(current.layer);
+      } else if (map && map.hasLayer(current.layer)) {
+        map.removeLayer(current.layer);
+      }
+    }
+    pendingShapeRef.current = null;
+    setPendingShape(null);
+    setShapeErrors({ name: "", category: "" });
+  }, [ensureDrawLayerGroup, map]);
 
   useEffect(() => {
     if (!map) return;
@@ -453,28 +638,29 @@ function DrawController() {
       activeLayerId: activeLayerId || null,
     });
 
-    const finishLineOrPolygon = (e) => {
+const finishLineOrPolygon = (e) => {
       if (e) L.DomEvent.stop(e);
 
       const points = getCleanDrawPoints(drawPointsRef.current);
-      if (activeSubTool === "polygon" && points.length >= 3) {
+if (activeSubTool === "polygon" && points.length >= 3) {
         clearTempLayer();
-        commitDrawLayer(L.polygon(points, DRAW_STYLES.default), "polygon");
+        const closedPoints = [...points, points[0]];
+        openMetadataPrompt(L.polygon(closedPoints, DRAW_STYLES.default), "polygon");
         drawPointsRef.current = [];
         return true;
       }
       if ((activeSubTool === "line" || activeSubTool === "polyline") && points.length >= 2) {
         clearTempLayer();
-        commitDrawLayer(L.polyline(points, DRAW_STYLES.default), "line");
+        openMetadataPrompt(L.polyline(points, DRAW_STYLES.default), "line");
         drawPointsRef.current = [];
         return true;
       }
       return false;
     };
 
-    const onClick = (e) => {
+const onClick = (e) => {
       if (activeSubTool === "point" || activeSubTool === "marker") {
-        commitDrawLayer(L.marker(e.latlng, { icon: createDrawMarker() }), "point");
+        openMetadataPrompt(L.marker(e.latlng, { icon: createDrawMarker() }), "point");
         return;
       }
 
@@ -548,10 +734,10 @@ function DrawController() {
       map.dragging.enable();
 
       if (activeSubTool === "rectangle") {
-        commitDrawLayer(L.rectangle(L.latLngBounds(start, e.latlng), DRAW_STYLES.default), "rectangle");
+        openMetadataPrompt(L.rectangle(L.latLngBounds(start, e.latlng), DRAW_STYLES.default), "rectangle");
       }
       if (activeSubTool === "circle") {
-        commitDrawLayer(L.circle(start, { ...DRAW_STYLES.default, radius: start.distanceTo(e.latlng) }), "circle");
+        openMetadataPrompt(L.circle(start, { ...DRAW_STYLES.default, radius: start.distanceTo(e.latlng) }), "circle");
       }
     };
 
@@ -581,7 +767,20 @@ function DrawController() {
       dragStartRef.current = null;
       setIsDrawing(false);
     };
-  }, [map, activeTool, activeSubTool, activeLayerId, clearTempLayer, commitDrawLayer, createDrawMarker, ensureDrawLayerGroup, getCleanDrawPoints, renderDraftLayer, setIsDrawing, setNotification]);
+  }, [map, activeTool, activeSubTool, activeLayerId, clearTempLayer, createDrawMarker, ensureDrawLayerGroup, getCleanDrawPoints, openMetadataPrompt, renderDraftLayer, setIsDrawing]);
+
+  useEffect(() => {
+    const drawLayerGroup = ensureDrawLayerGroup();
+    if (!drawLayerGroup || !map) return;
+
+    layers.forEach((layer) => {
+      if (!layer?.layer) return;
+      const hasLayer = drawLayerGroup.hasLayer(layer.layer);
+      if (layer.visible !== false && !hasLayer) {
+        drawLayerGroup.addLayer(layer.layer);
+      }
+    });
+  }, [ensureDrawLayerGroup, layers, map]);
 
   useEffect(() => {
     const drawLayerGroup = ensureDrawLayerGroup();
@@ -590,20 +789,56 @@ function DrawController() {
     let cancelled = false;
 
     const restoreBackendLayers = async () => {
-      const records = await fetchSavedRegions();
+      const [layerRecords, featureRecords] = await Promise.all([
+        fetchSavedRegions(),
+        getAllFeatures().catch((error) => {
+          console.error("[Map] Failed to fetch saved features:", error);
+          return [];
+        }),
+      ]);
       if (cancelled) return;
 
-      const backendLayers = records
-        .map(normalizeBackendLayer)
-        .filter(Boolean)
+      let backendLayers = hydrateBackendLayers(layerRecords, featureRecords)
         .map((backendLayer) => {
           const layer = createLeafletLayerFromBackendLayer(backendLayer);
-          if (backendLayer.visible !== false) {
+          if (layer && backendLayer.visible !== false) {
             drawLayerGroup.addLayer(layer);
           }
           return { ...backendLayer, layer };
-        })
-        .filter((backendLayer) => backendLayer.layer);
+        });
+
+      const hasRootGroup = backendLayers.some((layer) => layer.type === "group");
+      if (!hasRootGroup) {
+        const defaultGroupId = "untitled-layer";
+        const groupRecord = {
+          id: defaultGroupId,
+          name: "Untitled Layer",
+          type: "group",
+          visible: true,
+          opacity: 1,
+          parentLayerId: null,
+          backendId: defaultGroupId,
+          backendSynced: true,
+          backendDetails: null,
+          backendComments: [],
+          color: "#2563eb",
+          category: null,
+          radius: null,
+          popupContent: null,
+          data: null,
+          layer: null,
+        };
+
+        try {
+          await saveLayerGroup(defaultGroupId, "Untitled Layer", {});
+        } catch (error) {
+          console.error("[Map] Failed to create default layer group:", error);
+        }
+
+        backendLayers = [groupRecord, ...backendLayers.map((layer) =>
+          layer.parentLayerId ? layer : { ...layer, parentLayerId: defaultGroupId }
+        )];
+      }
 
       if (backendLayers.length > 0) {
         setLayers(backendLayers);
@@ -641,8 +876,9 @@ function DrawController() {
         },
       });
       drawLayerGroup.addLayer(geoLayer);
+      const sampleLayerId = getNextLayerId();
       addLayer({
-        id: `geojson-${Date.now()}`,
+        id: sampleLayerId,
         name: "Sample GeoJSON",
         type: "geojson",
         visible: true,
@@ -652,9 +888,33 @@ function DrawController() {
       });
       hasInitGeoJSON.current = true;
     }
-  }, [addLayer, backendHydrated, ensureDrawLayerGroup, layers.length, map]);
+  }, [addLayer, backendHydrated, ensureDrawLayerGroup, getNextLayerId, layers.length, map, setNotification]);
 
-  return null;
+  useEffect(() => {
+    if (!pendingShape) return;
+    pendingShapeRef.current = pendingShape;
+  }, [pendingShape]);
+
+  return (
+    <>
+      <ShapeMetadataModal
+        open={Boolean(pendingShape)}
+        title={`Save ${pendingShape?.type || "shape"}`}
+        values={shapeForm}
+        errors={shapeErrors}
+        onChange={(next) => {
+          setShapeForm((prev) => ({ ...prev, ...next }));
+          setShapeErrors((prev) => ({
+            ...prev,
+            ...(next.name !== undefined ? { name: "" } : {}),
+            ...(next.category !== undefined ? { category: "" } : {}),
+          }));
+        }}
+        onSubmit={finalizePendingShape}
+        onCancel={cancelPendingShape}
+      />
+    </>
+  );
 }
 
 function TextController() {
@@ -664,6 +924,7 @@ function TextController() {
     activeSubTool,
     drawLayerGroupRef,
     addLayer,
+    getNextLayerId,
   } = useMapContext();
 
   useEffect(() => {
@@ -687,8 +948,9 @@ function TextController() {
 
       marker.bindPopup(contentHtml);
       drawLayerGroupRef.current.addLayer(marker);
+      const layerId = getNextLayerId();
       addLayer({
-        id: `${activeSubTool}-${Date.now()}`,
+        id: layerId,
         name: title,
         type: activeSubTool,
         visible: true,
@@ -715,8 +977,9 @@ function TextController() {
           weight: 2,
         }).addTo(map);
         drawLayerGroupRef.current.addLayer(circle);
+        const layerId = getNextLayerId();
         addLayer({
-          id: `highlighter-${Date.now()}`,
+          id: layerId,
           name: "Highlighter",
           type: "highlighter",
           visible: true,
@@ -748,65 +1011,84 @@ function TextController() {
       map.off("click", onMapClick);
       mapContainer.classList.remove("gis-drawing");
     };
-  }, [map, activeTool, activeSubTool, drawLayerGroupRef, addLayer]);
+  }, [map, activeTool, activeSubTool, drawLayerGroupRef, addLayer, getNextLayerId]);
 
   return null;
 }
-function BoundaryLayer() {
-  const map = useMap();
 
-  useEffect(() => {
-    let retries = 0;
-    const MAX_RETRIES = 5;
-    const RETRY_DELAY = 3000;
 
-    const fetchBoundary = () => {
-      fetch('http://10.172.178.104:8080/api/boundaries/india')
-        .then(response => response.json())
-        .then(data => {
-          L.geoJSON(data, {
-            style: {
-              color: '#000000',
-              weight: 2,
-              fillOpacity: 0,
-              dashArray: '5,5',
-            },
-          }).addTo(map);
-        })
-        .catch(err => {
-          console.error(`Boundary fetch failed (attempt ${retries + 1}):`, err);
-          if (retries < MAX_RETRIES) {
-            retries++;
-            setTimeout(fetchBoundary, RETRY_DELAY);
-          } else {
-            console.error('Boundary fetch failed after 5 retries — check server');
-          }
-        });
-    };
 
-    fetchBoundary();
-  }, [map]);
-
-  return null;
-}
 function Map() {
   const {
     basemap,
     setBasemap,
     drawLayerGroupRef,
     setNotification,
-    mapMode,
-    cameraPitch,
+    map,
   } = useMapContext();
   const featureGroupRef = useRef(null);
   const tileErrorCountRef = useRef(0);
   const hasSwitchedRef = useRef(false);
+
+  const boundaryLayerRef = useRef(null);
+
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY = 1500;
+
+  useEffect(() => {
+    if (!map) return;
+
+    let retries = 0;
+    let cancelled = false;
+
+    const fetchBoundary = () => {
+      fetch("http://10.172.178.104:8080/api/boundaries/india")
+        .then((response) => response.json())
+        .then((data) => {
+          if (cancelled) return;
+
+          if (boundaryLayerRef.current) {
+            map.removeLayer(boundaryLayerRef.current);
+            boundaryLayerRef.current = null;
+          }
+
+          boundaryLayerRef.current = L.geoJSON(data, {
+            style: {
+              color: "#000000",
+              weight: 2,
+              fillOpacity: 0,
+              dashArray: "5,5",
+            },
+          }).addTo(map);
+        })
+        .catch((err) => {
+          console.error(`Boundary fetch failed (attempt ${retries + 1}):`, err);
+          if (retries < MAX_RETRIES - 1) {
+            retries += 1;
+            setTimeout(fetchBoundary, RETRY_DELAY);
+          } else {
+            console.error("Boundary fetch failed after 5 retries — check server");
+          }
+        });
+    };
+
+    fetchBoundary();
+
+    return () => {
+      cancelled = true;
+      if (boundaryLayerRef.current) {
+        map.removeLayer(boundaryLayerRef.current);
+        boundaryLayerRef.current = null;
+      }
+    };
+  }, [map]);
 
   useEffect(() => {
     if (featureGroupRef.current && !drawLayerGroupRef.current) {
       drawLayerGroupRef.current = featureGroupRef.current;
     }
   }, [drawLayerGroupRef]);
+
 
   useEffect(() => {
     tileErrorCountRef.current = 0;
@@ -850,14 +1132,13 @@ function Map() {
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
       scrollWheelZoom={true}
-      className={`gis-map ${mapMode === "3d" ? "gis-map-3d" : ""}`}
-      style={{ "--gis-map-pitch": `${cameraPitch}deg` }}
+      className="gis-map"
       zoomControl={false}
       attributionControl={true}
     >
       <MapEvents />
       <BoundaryLayer />
-      <DrawController />
+    <DrawController />
       <SelectionController />
       <TextController />
       {!isWindy && currentBasemap.url && (
