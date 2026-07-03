@@ -110,6 +110,7 @@ function AnnotationController() {
     setActiveSubTool,
     drawLayerGroupRef,
     addLayer,
+    getNextLayerId,
     setNotification,
     layers,
   } = useMapContext();
@@ -130,8 +131,10 @@ function AnnotationController() {
       if (pendingRef.current?.marker && !pendingRef.current.saved) {
         map.removeLayer(pendingRef.current.marker);
       }
-      setPendingAnnotation(null);
-      setText("");
+      queueMicrotask(() => {
+        setPendingAnnotation(null);
+        setText("");
+      });
       return;
     }
 
@@ -222,8 +225,9 @@ function AnnotationController() {
       `;
 
       pendingAnnotation.marker.bindPopup(popupContent).openPopup();
+      const layerId = getNextLayerId();
       addLayer({
-        id: `${pendingAnnotation.type}-${Date.now()}`,
+        id: layerId,
         name: pendingAnnotation.config.label,
         type: pendingAnnotation.type,
         visible: true,

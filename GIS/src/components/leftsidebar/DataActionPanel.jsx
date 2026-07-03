@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { getLayerFeatures } from '../../services/featuresApi';
 import './DataActionPanel.css';
 
-const DataActionPanel = ({
-  isOpen,
-  onOpenOperations,
-  selectedLayerId,
-}) => {
+const DataActionPanel = ({ isOpen, onOpenOperations, selectedLayerId }) => {
+  const isLayerSelected = Boolean(selectedLayerId);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [basicSelected, setBasicSelected] = useState(null);
   const [actionSelected, setActionSelected] = useState(null);
   const [importSelected, setImportSelected] = useState(null);
+  const [layerFeatures, setLayerFeatures] = useState([]);
+  const [layerFeaturesLoading, setLayerFeaturesLoading] = useState(false);
+  const [layerFeaturesError, setLayerFeaturesError] = useState('');
 
   const basicTools = [
     {
@@ -81,10 +83,80 @@ const DataActionPanel = ({
       )
     : null;
 
+  const getFeatureLabel = (feature, index) => {
+    if (!feature) return `Feature ${index + 1}`;
+    return (
+      feature.name ||
+      feature.title ||
+      feature.label ||
+      feature.properties?.name ||
+      feature.properties?.title ||
+      feature.properties?.label ||
+      feature.id ||
+      `Feature ${index + 1}`
+    );
+  };
+
+  const getFeatureMeta = (feature) => {
+    if (!feature) return '';
+    const parts = [];
+    if (feature.type) parts.push(feature.type);
+    if (feature.geometry?.type && feature.geometry.type !== feature.type) {
+      parts.push(feature.geometry.type);
+    }
+    if (feature.id !== undefined && feature.id !== null) {
+      parts.push(`ID: ${feature.id}`);
+    }
+    return parts.join(' - ');
+  };
+
   const handleBasicToggle = (index) => {
-    if (!selectedLayerId) return;
+    if (!isLayerSelected) return;
     setBasicSelected(basicSelected === index ? null : index);
   };
+
+  useEffect(() => {
+    if (!selectedLayerId) {
+      setBasicSelected(null);
+      setActionSelected(null);
+      setImportSelected(null);
+      setLayerFeatures([]);
+      setLayerFeaturesError('');
+      setLayerFeaturesLoading(false);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadLayerFeatures = async () => {
+      setLayerFeaturesLoading(true);
+      setLayerFeaturesError('');
+
+      try {
+        const response = await getLayerFeatures(selectedLayerId);
+        const nextFeatures = Array.isArray(response)
+          ? response
+          : response?.features || response?.items || response?.results || response?.data || [];
+
+        if (!isActive) return;
+        setLayerFeatures(nextFeatures);
+      } catch (error) {
+        if (!isActive) return;
+        setLayerFeatures([]);
+        setLayerFeaturesError(error.message || 'Unable to load features for this layer.');
+      } finally {
+        if (isActive) {
+          setLayerFeaturesLoading(false);
+        }
+      }
+    };
+
+    loadLayerFeatures();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedLayerId]);
 
   const handleActionToggle = (id) => {
     setActionSelected(actionSelected === id ? null : id);
@@ -134,11 +206,7 @@ const DataActionPanel = ({
 
           {!selectedLayerId && (
             <div className="layer-required-message">
-              <Icon
-                icon="mdi:information-outline"
-                width={16}
-                height={16}
-              />
+              <Icon icon="mdi:information-outline" width={16} height={16} />
               <span>Select a layer to enable basic operations.</span>
             </div>
           )}
@@ -146,7 +214,6 @@ const DataActionPanel = ({
       </div>
 
       <div className="panel-scroll">
-        {/* keep scrolling for everything under the Basic section */}
         {searchTerm ? (
           <div className="search-results">
             <h4 className="sub-title">Search Results</h4>
@@ -178,6 +245,52 @@ const DataActionPanel = ({
           </div>
         ) : (
           <>
+            <div className="sub-section">
+              <h4 className="sub-title">Layer Features</h4>
+              {!selectedLayerId ? (
+                <div className="layer-required-message">
+                  <Icon icon="mdi:information-outline" width={16} height={16} />
+                  <span>Select a layer to load its features.</span>
+                </div>
+              ) : layerFeaturesLoading ? (
+                <div className="layer-features-state">
+                  <Icon icon="mdi:loading" width={16} height={16} className="spin-icon" />
+                  <span>Loading features...</span>
+                </div>
+              ) : layerFeaturesError ? (
+                <div className="layer-features-state layer-features-error">
+                  <Icon icon="mdi:alert-circle-outline" width={16} height={16} />
+                  <span>{layerFeaturesError}</span>
+                </div>
+              ) : layerFeatures.length > 0 ? (
+                <div className="layer-feature-list">
+                  {layerFeatures.map((feature, index) => (
+                    <div
+                      key={feature.id ?? `${selectedLayerId}-${index}`}
+                      className="layer-feature-item"
+                    >
+                      <div className="layer-feature-icon">
+                        <Icon icon="mdi:shape-outline" width={16} height={16} />
+                      </div>
+                      <div className="layer-feature-info">
+                        <span className="layer-feature-name">
+                          {getFeatureLabel(feature, index)}
+                        </span>
+                        <span className="layer-feature-meta">
+                          {getFeatureMeta(feature) || 'Feature from selected layer'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="layer-features-state">
+                  <Icon icon="mdi:folder-search-outline" width={16} height={16} />
+                  <span>No features found for this layer.</span>
+                </div>
+              )}
+            </div>
+
             <div className="sub-section">
               <h4 className="sub-title">Actions</h4>
               <div className="action-list">
@@ -221,4 +334,3 @@ const DataActionPanel = ({
 };
 
 export default DataActionPanel;
-

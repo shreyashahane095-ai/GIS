@@ -1,46 +1,59 @@
 /* leftsidebar.css - Consolidated */
 
+:root {
+  /* Sidebar visual primitives (shared across left sidebar panels) */
+  --sidebar-border-width: 1px;
+  --sidebar-card-radius: var(--radius-md);
+  --sidebar-button-radius: 15px;
+  --sidebar-item-radius: 8px;
+  --sidebar-gutter: var(--layout-gutter);
+  --sidebar-gutter-sm: var(--layout-gutter-sm);
+  --sidebar-gutter-xs: var(--layout-gutter-xs);
+}
+
 .left-sidebar {
   width: 100%;
   height: 100%;
   background: transparent;
   color: var(--text-primary);
-  padding: 0;
+  padding: var(--layout-gutter);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
 }
 
-.sidebar-content {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  padding: 14px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
-.sidebar-content::-webkit-scrollbar {
+.left-sidebar::-webkit-scrollbar {
   width: 4px;
 }
-.sidebar-content::-webkit-scrollbar-track {
+.left-sidebar::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
-.sidebar-content::-webkit-scrollbar-thumb {
+.left-sidebar::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 4px;
 }
 
-/* Fixed Footer */
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gutter);
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Keep footer pinned to the bottom of the sidebar + preserve base flexbox */
+.left-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+
 .sidebar-footer {
-  flex-shrink: 0;
-  padding: 12px;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  z-index: 15;
+  flex: 0 0 auto;
+  margin-top: 0;
 }
 
 /* ============================================
@@ -49,86 +62,69 @@
 .toggle-buttons {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: var(--layout-gutter-xs);
   margin-bottom: 0;
 }
 
 .sidebar-action-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background: var(--bg-tertiary);
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 12px;
+  min-height: 44px;
+  width: 100%;
+  background: var(--bg-secondary);
   color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
+
 
 .sidebar-action-btn:hover {
+  background-color: var(--bg-hover);
   border-color: var(--primary);
-  background: var(--bg-hover);
+  transform: translateY(-1px);
 }
+
 
 .sidebar-action-btn.active {
-  border-color: var(--primary);
-  background: rgba(37, 99, 235, 0.12);
+  background-color: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.35);
   color: var(--primary);
 }
 
-.toggle-btn {
+
+
+.sidebar-action-btn .toggle-icon-group {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: transparent;
-  color: var(--text-primary);
-  border: none;
-  cursor: pointer;
-  transition: none;
-  font-family: inherit;
-  width: auto;
-  min-height: auto;
-  box-shadow: none;
+  gap: 10px;
 }
 
-.toggle-btn:hover {
-  background: transparent;
-  border-color: transparent;
-  transform: none;
-}
 
-.toggle-btn.active {
-  background: transparent;
-  border-color: transparent;
-  color: var(--primary);
-}
-
-.toggle-btn .toggle-icon-group {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-.toggle-btn svg {
+.sidebar-action-btn svg {
   color: var(--text-secondary);
   flex-shrink: 0;
 }
+
 
 .chevron-icon {
   color: var(--text-muted);
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.toggle-btn.active .chevron-icon {
+.sidebar-action-btn.active .chevron-icon {
   color: var(--primary);
   transform: rotate(180deg);
 }
+
 
 /* ============================================
    TAB CONTAINER (for DataActionPanel tabs)
@@ -171,7 +167,7 @@
    SEARCH
    ============================================ */
 .search-container {
-  margin-bottom: 12px;
+  margin-bottom: var(--layout-gutter-sm);
 }
 
 .search-box {
@@ -230,7 +226,7 @@
 .search-results-count {
   font-size: 12px;
   color: var(--text-muted);
-  margin-top: 6px;
+  margin-top: var(--layout-gutter-xs);
   padding: 0 4px;
 }
 
@@ -240,13 +236,13 @@
 .sidebar-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--layout-gutter);
 }
 
 .sub-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--layout-gutter-xs);
 }
 
 .sub-title {
@@ -427,7 +423,7 @@
    SEARCH RESULTS
    ============================================ */
 .search-results {
-  padding: 12px;
+  padding: var(--layout-gutter-sm);
   background-color: var(--bg-tertiary);
   border-radius: 8px;
   border: 1px solid var(--border-color);
@@ -459,98 +455,184 @@
    UPLOAD SECTION
    ============================================ */
 .upload-section {
-  margin: 4px 0;
-}
-
-.upload-area {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 16px;
-  text-align: left;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.upload-area:hover {
-  border-color: var(--primary);
-  background-color: var(--bg-secondary);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
-}
-
-.upload-area.dragging {
-  border-color: var(--primary);
-  background-color: var(--bg-secondary);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
-}
-
-.upload-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.upload-icon {
-  color: var(--primary);
   margin: 0;
+  flex: 0 0 auto;
+}
+
+.upload-row {
   display: flex;
+  gap: var(--layout-gutter-xs);
+}
+
+.sidebar-upload-btn {
+  flex: 1;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.upload-icon svg {
-  stroke: var(--primary);
+.sidebar-upload-btn:hover,
+.sidebar-upload-btn:focus-visible {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--bg-secondary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-.upload-info {
+/* Ensure the top border visibly changes on hover (some themes/overlays can mask it) */
+.sidebar-upload-btn:hover {
+  border-color: var(--primary) !important;
+}
+
+
+
+.file-input {
+  display: none;
+}
+
+/* ============================================
+   DATASETS
+   ============================================ */
+.datasets-section {
+  /* Overlap basemap switcher button (Map right now is absolute controls) */
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 2000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  /* Keep size tight so it overlays only the intended control */
+  flex: 0 0 auto;
+}
+
+
+.datasets-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
+}
+
+.dataset-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.dataset-item:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--primary);
+}
+
+
+.dataset-item.selected {
+  border-color: var(--primary);
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+.dataset-item.selected .add-btn {
+  color: var(--primary);
+}
+
+.dataset-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  flex: 1;
 }
 
-.upload-title {
+.dataset-name {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
-  margin: 0;
-  letter-spacing: -0.3px;
 }
 
-.upload-formats {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.4;
+.dataset-location {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-.file-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
+.add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
   cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
-/* Placeholder for removed datasets section and old browse button */
-/* Now handled by BrowseDataHub component */
+.add-btn:hover {
+  color: var(--primary);
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   BROWSE DATA HUB
+   ============================================ */
+.browse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  width: 100%;
+}
+
+.browse-btn:hover {
+  border-color: var(--primary);
+  background-color: rgba(37, 99, 235, 0.05);
+  transform: translateY(-1px);
+}
+
+.browse-btn svg {
+  color: var(--text-muted);
+}
 
 /* ============================================
    UPLOADED FILES
    ============================================ */
 .uploaded-files {
-  margin-top: 4px;
+  margin-top: var(--layout-gutter-xs);
   border-top: 1px solid var(--border-color);
-  padding-top: 12px;
+  padding-top: var(--layout-gutter-sm);
+  flex: 0 0 auto;
 }
 
 .uploaded-title {
@@ -591,7 +673,7 @@
    ============================================ */
 @media (max-width: 768px) {
   .left-sidebar {
-    padding: 12px;
+    padding: var(--layout-gutter-sm);
   }
   .basic-grid {
     grid-template-columns: repeat(4, 1fr);
@@ -632,12 +714,19 @@
     width: 20px !important;
     height: 20px !important;
   }
-  .upload-area {
-    padding: 16px 12px;
+  .upload-row {
+    flex-direction: column;
+  }
+  .dataset-item {
+    padding: var(--layout-gutter-xs) 10px;
   }
   .toggle-btn {
     font-size: 12px;
     padding: 10px 14px;
     min-height: 38px;
+  }
+
+  .sidebar-upload-btn {
+    width: 100%;
   }
 }

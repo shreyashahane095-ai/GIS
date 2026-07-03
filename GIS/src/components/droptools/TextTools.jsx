@@ -32,6 +32,7 @@ function TextTools() {
     map,
     drawLayerGroupRef,
     addLayer,
+    getNextLayerId,
   } = useMapContext();
   const [pendingText, setPendingText] = useState("");
   const pendingTextRef = useRef("");
@@ -50,13 +51,16 @@ function TextTools() {
   }, [map]);
 
   useEffect(() => {
+    if (activeTool !== "text") {
+      clearListener();
+    }
+  }, [activeTool, clearListener]);
+
+  useEffect(() => {
     return () => clearListener();
   }, [clearListener]);
 
-  if (activeTool !== "text") {
-    if (listenerRef.current) clearListener();
-    return null;
-  }
+  if (activeTool !== "text") return null;
 
   const handleSelect = (id) => {
     setActiveSubTool(id);
@@ -97,8 +101,9 @@ function TextTools() {
     if (drawLayerGroupRef.current) {
       drawLayerGroupRef.current.addLayer(marker);
     }
+    const layerId = getNextLayerId();
     addLayer({
-      id: `${activeSubTool}-${Date.now()}`,
+      id: layerId,
       name: title,
       type: activeSubTool,
       visible: true,
@@ -110,8 +115,8 @@ function TextTools() {
 
   const addContentMarker = (latlng) => {
     const text = pendingTextRef.current;
-    let content = "";
-    let title = "";
+    let content;
+    let title;
     switch (activeSubTool) {
       case "text":
         content = `<div style="font-weight:600">${text}</div>`;
@@ -136,6 +141,7 @@ function TextTools() {
       default:
         return;
     }
+    if (!content || !title) return;
     createMarker(latlng, content, title);
     setPendingText("");
     pendingTextRef.current = "";
@@ -162,8 +168,9 @@ function TextTools() {
             weight: 2,
           }).addTo(map);
           if (drawLayerGroupRef.current) drawLayerGroupRef.current.addLayer(circle);
+          const layerId = getNextLayerId();
           addLayer({
-            id: `highlighter-${Date.now()}`,
+            id: layerId,
             name: "Highlighter",
             type: "highlighter",
             visible: true,

@@ -1,0 +1,135 @@
+.layer-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.42);
+  padding: 20px;
+}
+
+.layer-edit-modal {
+  width: min(92vw, 480px);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.28);
+}
+
+.layer-edit-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.layer-edit-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.layer-edit-header p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.layer-edit-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layer-edit-body {
+  display: grid;
+  gap: 12px;
+}
+
+.layer-edit-body > label {
+  display: grid;
+  gap: 6px;
+}
+
+.layer-edit-body span {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.layer-edit-body input[type="text"],
+.layer-edit-body select,
+.layer-edit-body input[type="number"] {
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 0 12px;
+}
+
+.layer-edit-color-row,
+.layer-edit-opacity-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.layer-edit-color-row input[type="color"] {
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+}
+
+.layer-edit-opacity-row {
+  grid-template-columns: minmax(0, 1fr) 92px;
+}
+
+.layer-edit-opacity-row input[type="range"] {
+  width: 100%;
+}
+
+.layer-edit-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  line-height: 1.2;
+}
+
+.layer-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.layer-edit-cancel,
+.layer-edit-save {
+  height: 38px;
+  border-radius: 8px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layer-edit-cancel {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.layer-edit-save {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--text-on-primary);
+}

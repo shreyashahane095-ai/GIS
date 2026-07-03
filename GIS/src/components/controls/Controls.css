@@ -10,13 +10,13 @@
 
 .right-controls {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 204px;
+  left: 24px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .zoom-level {
@@ -24,15 +24,16 @@
   align-items: center;
   justify-content: center;
   width: 44px;
-  height: 44px;
-  margin: 0;
+  height: 32px;
   border-radius: 10px;
   background: var(--gis-map-control-bg);
   border: 1px solid var(--gis-map-control-border);
   box-shadow: var(--gis-shadow-sm);
   font-weight: 700;
-  font-size: 13px;
-  line-height: 1;
+  font-size: 12px;
   color: var(--gis-map-control-text);
   user-select: none;
+  transition: var(--gis-transition);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
