@@ -508,11 +508,12 @@
    DATASETS
    ============================================ */
 .datasets-section {
-  /* Overlap basemap switcher button (Map right now is absolute controls) */
-  position: absolute;
+  /* Overlap basemap switcher button */
+  position: fixed;
   left: 20px;
   bottom: 20px;
-  z-index: 2000;
+  z-index: 1000;
+
 
   display: flex;
   flex-direction: column;

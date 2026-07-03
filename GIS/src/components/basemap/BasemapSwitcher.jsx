@@ -21,11 +21,22 @@ function BasemapSwitcher() {
       </button>
       {open && (
         <div className="basemap-menu glass-panel gis-fade-in">
-          <h6 className="fw-bold mb-3">Basemap</h6>
+          <div className="basemap-menu-header">
+            <h6 className="fw-bold mb-3">Basemap</h6>
+            <button
+              type="button"
+              className="basemap-close-btn"
+              onClick={() => setOpen(false)}
+              aria-label="Close basemaps"
+            >
+              <X size={18} />
+            </button>
+          </div>
           <div className="basemap-grid">
             {basemaps.map((b) => (
 
               <button
+
                 key={b.id}
                 className={`basemap-item ${basemap === b.id ? "active" : ""}`}
                 onClick={() => {
