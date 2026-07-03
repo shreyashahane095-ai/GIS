@@ -827,8 +827,23 @@ function Map() {
   };
 
   const currentBasemap = MAP_PROVIDERS[basemap] || MAP_PROVIDERS[FALLBACK_BASEMAP];
-
+  const isWindy = currentBasemap.id === 'windy';
   return (
+  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    {isWindy && (
+      <iframe
+        src="https://embed.windy.com/embed2.html?lat=20&lon=78&zoom=5&level=surface&overlay=wind&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&detailLat=20&detailLon=78&metricWind=default&metricTemp=default&radarRange=-1"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          zIndex: 1000,
+        }}
+      />
+    )}
     <RLMapContainer
       center={DEFAULT_CENTER}
       zoom={DEFAULT_ZOOM}
@@ -842,10 +857,10 @@ function Map() {
     >
       <MapEvents />
       <BoundaryLayer />
-    <DrawController />
+      <DrawController />
       <SelectionController />
       <TextController />
-      {currentBasemap.url && (
+      {!isWindy && currentBasemap.url && (
         <TileLayer
           url={currentBasemap.url}
           attribution={currentBasemap.attribution}
@@ -856,7 +871,8 @@ function Map() {
       )}
       <FeatureGroup ref={featureGroupRef} />
     </RLMapContainer>
-  );
+  </div>
+);
 }
 
 export default Map;

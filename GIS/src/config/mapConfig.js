@@ -16,54 +16,51 @@ const MAP_PROVIDERS = {
     maxZoom: 19,
     color: '#2563eb',
   },
-  osm: {
-    id: 'osm',
-    label: 'OpenStreetMap',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    subdomains: 'abc',
-    maxZoom: 19,
-    color: '#93c5fd',
-  },
-  satellite: {
-    id: 'satellite',
-    label: 'Satellite',
+esriSatellite: {
+    id: 'esriSatellite',
+    label: 'ESRI Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution:
-      '&copy; <a href="https://www.esri.com/">Esri</a> i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    attribution: '&copy; Esri, Maxar, USGS, NASA',
     subdomains: '',
     maxZoom: 19,
     color: '#166534',
   },
-  dark: {
-    id: 'dark',
-    label: 'Dark',
-    url: 'http://10.172.178.104:8080/api/tiles/{z}/{x}/{y}.png',
-    attribution: '&copy; Custom Tile Server',
-    subdomains: '',
-    maxZoom: 19,
-    color: '#1e293b',
-  },
-  light: {
-    id: 'light',
-    label: 'Light',
+   cartoLight: {
+    id: 'cartoLight',
+    label: 'Carto Light',
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    attribution: '&copy; CartoDB',
     subdomains: 'abcd',
     maxZoom: 19,
     color: '#e2e8f0',
   },
-  blank: {
-    id: 'blank',
-    label: 'Blank',
-    url: '',
-    attribution: '',
+  dark: {
+    id: 'dark',
+    label: 'Carto Dark',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 19,
+    color: '#1e293b',
+  },
+   esriStreet: {
+    id: 'esriStreet',
+    label: 'ESRI Street',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri',
     subdomains: '',
     maxZoom: 19,
-    color: '#ffffff',
+    color: '#2563eb',
   },
+  windy: {
+  id: 'windy',
+  label: 'Weather (Windy)',
+  url: 'https://embed.windy.com/embed2.html',
+  attribution: '',
+  subdomains: '',
+  maxZoom: 19,
+  color: '#38bdf8',
+},
 };
 
 /** Default basemap to use on first load */
