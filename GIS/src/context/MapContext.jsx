@@ -70,7 +70,32 @@ export function MapProvider({ children }) {
   const [measureResult, setMeasureResult] = useState(null);
   const [historyState, setHistoryState] = useState({ index: -1, length: 0 });
   const [isDrawing, setIsDrawing] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [notification, setNotificationState] = useState(null);
+  const notificationTimeoutRef = useRef(null);
+
+  const setNotification = useCallback((msg) => {
+    setNotificationState(msg);
+
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+
+    if (msg) {
+      notificationTimeoutRef.current = setTimeout(() => {
+        setNotificationState(null);
+        notificationTimeoutRef.current = null;
+      }, 5000);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const drawLayerGroupRef = useRef(null);
   const historyRef = useRef([]);
@@ -161,8 +186,7 @@ export function MapProvider({ children }) {
     if (layerRecord.layer.bindPopup) {
       const nextCategory = updates.category ?? layerRecord.category ?? layerRecord.properties?.category;
       layerRecord.layer.bindPopup(
-        `<div style="min-width:160px"><strong>${nextName || "Layer"}</strong>${
-          nextCategory ? `<div style="font-size:12px;opacity:0.8">${nextCategory}</div>` : ""
+        `<div style="min-width:160px"><strong>${nextName || "Layer"}</strong>${nextCategory ? `<div style="font-size:12px;opacity:0.8">${nextCategory}</div>` : ""
         }</div>`
       );
     }
@@ -200,15 +224,36 @@ export function MapProvider({ children }) {
           layerObj.id === undefined || layerObj.id === null || layerObj.id === ""
             ? getNextLayerId(prev)
             : normalizeLayerId(layerObj.id);
+
+        // Respect explicit parentLayerId if provided; otherwise fall back to the currently selected layer.
+        const activeParentGroup = activeLayerId != null ? prev.find((l) => l.id === activeLayerId) : null;
+        const isParentGroup = activeParentGroup?.type === "group";
+
+        let parentLayerId =
+          layerObj.parentLayerId !== undefined
+            ? layerObj.parentLayerId
+            : (isParentGroup ? activeLayerId : null);
+
+        // Ensure the resolved parent layer is actually a group layer (never a leaf feature)
+        if (parentLayerId != null) {
+          const parentGroupRecord = prev.find((l) => l.id === parentLayerId);
+          if (parentGroupRecord && parentGroupRecord.type !== "group") {
+            parentLayerId = null;
+          }
+        }
+
         const normalizedLayer = {
           id,
           visible: true,
           opacity: 1,
-          parentLayerId: activeLayerId,
+          parentLayerId,
           properties,
           ...layerObj,
-          data: layerObj.layer ? layerToGeoJSON(layerObj.layer, properties) : layerObj.data || null,
+          data: layerObj.layer
+            ? layerToGeoJSON(layerObj.layer, properties)
+            : layerObj.data || null,
         };
+
         const next = [normalizedLayer, ...prev];
         applyLayerAppearance(normalizedLayer, normalizedLayer);
         recordHistory(next);
@@ -221,6 +266,7 @@ export function MapProvider({ children }) {
             type: normalizedLayer.type,
             geojson: normalizedLayer.data,
             properties: normalizedLayer.properties || normalizedLayer.data?.properties || {},
+            skipBackendSync: normalizedLayer.skipBackendSync,
           });
         }
         return next;
@@ -288,16 +334,17 @@ export function MapProvider({ children }) {
           const updatedLayer = {
             ...l,
             ...persistedUpdates,
+            isGroup: persistedUpdates.isGroup !== undefined ? persistedUpdates.isGroup : l.isGroup,
             properties: nextProperties,
             backendDetails: l.backendDetails
               ? {
-                  ...l.backendDetails,
-                  ...persistedUpdates,
-                  properties: {
-                    ...(l.backendDetails.properties || {}),
-                    ...nextProperties,
-                  },
-                }
+                ...l.backendDetails,
+                ...persistedUpdates,
+                properties: {
+                  ...(l.backendDetails.properties || {}),
+                  ...nextProperties,
+                },
+              }
               : l.backendDetails,
             data: l.layer ? layerToGeoJSON(l.layer, nextProperties) : l.data,
           };
@@ -380,8 +427,14 @@ export function MapProvider({ children }) {
   );
 
   const selectLayer = useCallback((id) => {
-    setActiveLayerId(id);
-    eventBus.publish(MAP_EVENTS.LAYER_SELECTED, { id });
+    setActiveLayerId((prev) => {
+      if (prev === id) {
+        eventBus.publish(MAP_EVENTS.LAYER_DESELECTED, { id });
+        return null;
+      }
+      eventBus.publish(MAP_EVENTS.LAYER_SELECTED, { id });
+      return id;
+    });
   }, []);
 
   const setBasemap = useCallback((nextBasemap) => {

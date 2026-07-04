@@ -38,9 +38,11 @@
 }
 
 .basemap-close-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+  /* keep close button visually neutral (avoid blue highlight) */
+  background: transparent;
+  color: var(--text-muted);
 }
+
 
 .basemap-grid {
   display: grid;

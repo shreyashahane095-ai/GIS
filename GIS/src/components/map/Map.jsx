@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import {
   MapContainer as RLMapContainer,
   TileLayer,
-  FeatureGroup,
+  LayerGroup,
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
@@ -25,6 +25,7 @@ import {
   hydrateBackendLayers,
 } from "../../services/layerHydration";
 import { fetchSavedRegions, saveLayerGroup } from "../../services/regionApi";
+import { createFeature } from "../../services/featuresApi";
 import { getAllFeatures } from "../../services/featuresApi";
 import { layerToGeoJSON } from "../../utils/geoJsonUtils";
 import ShapeMetadataModal from "./ShapeMetadataModal";
@@ -337,6 +338,7 @@ function DrawController() {
     getNextLayerId,
     setIsDrawing,
     activeLayerId,
+    setActiveLayerId,
     layers,
     setLayers,
     setNotification,
@@ -370,7 +372,7 @@ function DrawController() {
     if (!map) return null;
 
     if (!drawLayerGroupRef.current) {
-      drawLayerGroupRef.current = L.featureGroup();
+      drawLayerGroupRef.current = L.layerGroup();
     }
 
     if (!map.hasLayer(drawLayerGroupRef.current)) {
@@ -505,13 +507,43 @@ function DrawController() {
     }
   }, []);
 
-  const openMetadataPrompt = useCallback(
+      const openMetadataPrompt = useCallback(
     (layer, type) => {
       const drawLayerGroup = ensureDrawLayerGroup();
       if (!layer || !drawLayerGroup) return;
 
       const layerId = getNextLayerId();
-      const parentLayerId = layers.find((layer) => layer.type === "group")?.id || null;
+
+      // Determine where this new drawn feature should be attached.
+      // Rules:
+      // 1) If a parent layer/group is selected => attach to it.
+      // 2) Else if a feature is selected => attach as a child of that feature.
+      // 3) Else (no selection or invalid selection) => attach to root “Untitled Layer …”.
+
+      const selectedId = activeLayerId;
+      const selectedLayer = selectedId != null ? layers.find((l) => l.id === selectedId) : null;
+      const isGroupSelection = selectedLayer?.type === "group";
+
+      const getUntitledRootGroupCandidate = () => {
+        const untitledGroups = layers
+          .filter(
+            (l) =>
+              l.type === "group" &&
+              l.name &&
+              /^Untitled Layer(\s*\d+)?$/i.test(l.name) &&
+              !l.parentLayerId
+          )
+          .sort((a, b) => Number(a.id) - Number(b.id));
+        const untitled1 = untitledGroups.find((g) => g.name?.toLowerCase() === "untitled layer");
+        return untitled1 || untitledGroups[0] || null;
+      };
+
+      let parentLayerId = null;
+
+      if (selectedLayer && isGroupSelection) {
+        parentLayerId = selectedLayer.id;
+      }
+
       drawLayerGroup.addLayer(layer);
       const defaultColor = getDefaultShapeColor(type);
       applyShapeMetadata(layer, type, defaultColor);
@@ -525,15 +557,28 @@ function DrawController() {
       pendingShapeRef.current = { layer, type, layerId, parentLayerId };
       setPendingShape({ layer, type, layerId, parentLayerId });
     },
-    [applyShapeMetadata, ensureDrawLayerGroup, getNextLayerId, layers]
+    [
+      activeLayerId,
+      addLayer,
+      applyShapeMetadata,
+      ensureDrawLayerGroup,
+      getNextLayerId,
+      layers,
+    ]
   );
 
-  const finalizePendingShape = useCallback(() => {
+  const [isSavingShape, setIsSavingShape] = useState(false);
+
+  const finalizePendingShape = useCallback(async () => {
     const current = pendingShapeRef.current;
     if (!current) return;
+    if (isSavingShape) return;
 
-    const name = shapeForm.name.trim();
-    const category = shapeForm.category.trim();
+    try {
+      setIsSavingShape(true);
+
+      const name = shapeForm.name.trim();
+      const category = shapeForm.category.trim();
     const defaultColor = getDefaultShapeColor(current.type);
     const color = /^#[0-9a-fA-F]{6}$/.test(shapeForm.color)
       ? shapeForm.color
@@ -573,7 +618,72 @@ function DrawController() {
 
     bindShapeLabel(current.layer, name, current.type);
 
-    const newLayer = {
+    let localParentId = current.parentLayerId ?? null;
+    let backendGroupId = null;
+    let backendCaseId = null;
+
+    const parentGroup = localParentId != null ? layers.find((l) => l.id === localParentId) : null;
+
+    if (parentGroup) {
+      backendGroupId = parentGroup.backendId ?? parentGroup.id;
+      backendCaseId = parentGroup.case_id ?? parentGroup.properties?.case_id ?? null;
+    }
+
+    const geometry = current.layer.toGeoJSON?.()?.geometry ?? layerToGeoJSON(current.layer, properties)?.geometry ?? null;
+
+    const backendProperties = {
+      color,
+      ...(category ? { category } : {}),
+    };
+
+    // Call API to create the feature on the backend.
+    const createResponse = await createFeature({
+      name,
+      geometry: geometry?.geometry ?? geometry,
+      properties: backendProperties,
+      created_by: 1,
+      layer_id: backendGroupId,
+    });
+
+    const returnedFeatureId = createResponse?.id ?? createResponse?.feature_id ?? current.layerId;
+    const returnedLayerId = createResponse?.layer_id ?? createResponse?.layerId ?? backendGroupId;
+    const returnedCaseId = createResponse?.case_id ?? createResponse?.caseId ?? backendCaseId;
+
+    let finalParentLayerId = localParentId;
+
+    // SCENARIO: No layer group selected initially (localParentId is null).
+    // The backend auto-created a layer group (returnedLayerId is not null).
+    if (localParentId === null && returnedLayerId !== null) {
+      const existingLocalGroup = layers.find((l) => l.backendId === returnedLayerId || l.id === returnedLayerId);
+      if (!existingLocalGroup) {
+        const operationalGroupName = "Operational Layer";
+        const groupRecord = {
+          id: returnedLayerId,
+          name: operationalGroupName,
+          type: "group",
+          visible: true,
+          opacity: 1,
+          parentLayerId: null,
+          layer: null,
+          backendId: returnedLayerId,
+          case_id: returnedCaseId,
+          backendSynced: true,
+          skipBackendSync: true,
+          color: DRAW_STYLES.default.color,
+          category: null,
+          radius: null,
+          popupContent: null,
+          data: null,
+          properties: { name: operationalGroupName, type: "group", color: DRAW_STYLES.default.color },
+        };
+        addLayer(groupRecord);
+      }
+      
+      finalParentLayerId = returnedLayerId;
+      setActiveLayerId(returnedLayerId);
+    }
+
+    const finalNewLayer = {
       id: current.layerId,
       name,
       type: current.type,
@@ -582,22 +692,35 @@ function DrawController() {
       layer: current.layer,
       properties,
       data: layerToGeoJSON(current.layer, properties),
-      parentLayerId: current.parentLayerId || null,
+      parentLayerId: finalParentLayerId || null,
+      backendId: returnedFeatureId,
+      backendSynced: true,
+      skipBackendSync: true, // Crucial: avoid duplicate sync inside BackendGeometrySync
     };
 
-    addLayer(newLayer);
+    // Add feature to local tree.
+    addLayer(finalNewLayer);
+
     eventBus.publish(MAP_EVENTS.DRAWING_COMPLETED, {
-      layerId: newLayer.id,
-      layerName: newLayer.name,
-      parentLayerId: current.parentLayerId || null,
+      layerId: finalNewLayer.id,
+      layerName: finalNewLayer.name,
+      parentLayerId: finalNewLayer.parentLayerId || null,
       type: current.type,
-      geojson: newLayer.data,
+      geojson: finalNewLayer.data,
       properties,
     });
 
     pendingShapeRef.current = null;
     setPendingShape(null);
-  }, [addLayer, applyShapeMetadata, shapeForm]);
+    setIsSavingShape(false);
+  } catch (error) {
+    console.error("[Map] Failed to save pending shape:", error);
+    setNotification(`Could not save shape: ${error.message || "Unknown error"}`);
+    setIsSavingShape(false);
+  }
+  }, [addLayer, applyShapeMetadata, shapeForm, isSavingShape, setNotification, layers, setActiveLayerId]);
+
+  // (end DrawController)
 
   const cancelPendingShape = useCallback(() => {
     const current = pendingShapeRef.current;
@@ -687,6 +810,20 @@ const onClick = (e) => {
     };
 
     const onKeyDown = (e) => {
+      // Escape should close/exit selection & drawing flows.
+      if (e.key === "Escape") {
+        // Ensure any pending draw “metadata modal” is closed.
+        // (cancelPendingShape is a no-op if nothing is pending.)
+        cancelPendingShape();
+        // Also clear selection overlay if user was accidentally selecting.
+        eventBus.publish(MAP_EVENTS.GEOMETRY_DESELECTED, {});
+        // Clear selection state in any UI that depends on layer selection.
+        eventBus.publish(MAP_EVENTS.LAYER_DESELECTED, { id: activeLayerId });
+        setActiveTool("pointer");
+        setActiveSubTool(null);
+        return;
+      }
+
       if (activeSubTool !== "line" && activeSubTool !== "polyline" && activeSubTool !== "polygon") return;
 
       if (e.key === "Enter") {
@@ -807,44 +944,8 @@ const onClick = (e) => {
           return { ...backendLayer, layer };
         });
 
-      const hasRootGroup = backendLayers.some((layer) => layer.type === "group");
-      if (!hasRootGroup) {
-        const defaultGroupId = "untitled-layer";
-        const groupRecord = {
-          id: defaultGroupId,
-          name: "Untitled Layer",
-          type: "group",
-          visible: true,
-          opacity: 1,
-          parentLayerId: null,
-          backendId: defaultGroupId,
-          backendSynced: true,
-          backendDetails: null,
-          backendComments: [],
-          color: "#2563eb",
-          category: null,
-          radius: null,
-          popupContent: null,
-          data: null,
-          layer: null,
-        };
-
-        try {
-          await saveLayerGroup(defaultGroupId, "Untitled Layer", {});
-        } catch (error) {
-          console.error("[Map] Failed to create default layer group:", error);
-        }
-
-        backendLayers = [groupRecord, ...backendLayers.map((layer) =>
-          layer.parentLayerId ? layer : { ...layer, parentLayerId: defaultGroupId }
-        )];
-      }
-
-      if (backendLayers.length > 0) {
-        setLayers(backendLayers);
-        hasInitGeoJSON.current = true;
-      }
-
+      setLayers(backendLayers);
+      hasInitGeoJSON.current = true;
       setBackendHydrated(true);
     };
 
@@ -1005,7 +1106,7 @@ function TextController() {
       createMarker(latlng, popupContent[activeSubTool], title);
     };
 
-    map.on("click", onMapClick);
+    map.on("cl  ick", onMapClick);
 
     return () => {
       map.off("click", onMapClick);
@@ -1109,8 +1210,23 @@ function Map() {
   };
 
   const currentBasemap = MAP_PROVIDERS[basemap] || MAP_PROVIDERS[FALLBACK_BASEMAP];
-
+  const isWindy = currentBasemap.id === 'windy';
   return (
+  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    {isWindy && (
+      <iframe
+        src="https://embed.windy.com/embed2.html?lat=20&lon=78&zoom=5&level=surface&overlay=wind&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&detailLat=20&detailLon=78&metricWind=default&metricTemp=default&radarRange=-1"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          zIndex: 1000,
+        }}
+      />
+    )}
     <RLMapContainer
       center={DEFAULT_CENTER}
       zoom={DEFAULT_ZOOM}
@@ -1122,10 +1238,11 @@ function Map() {
       attributionControl={true}
     >
       <MapEvents />
+      {/* Boundary is loaded via boundaryLayerRef fetch effect */}
       <DrawController />
       <SelectionController />
       <TextController />
-      {currentBasemap.url && (
+      {!isWindy && currentBasemap.url && (
         <TileLayer
           url={currentBasemap.url}
           attribution={currentBasemap.attribution}
@@ -1134,9 +1251,10 @@ function Map() {
           eventHandlers={{ tileerror: handleTileError }}
         />
       )}
-      <FeatureGroup ref={featureGroupRef} />
+      <LayerGroup ref={featureGroupRef} />
     </RLMapContainer>
-  );
+  </div>
+);
 }
 
 export default Map;

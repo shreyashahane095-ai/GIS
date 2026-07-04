@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { eventBus, MAP_EVENTS } from "../../services/eventBus";
-import { deleteRegion, fetchRegionComments, fetchRegionDetails, sendRegion, updateRegion } from "../../services/regionApi";
+import { API_ENDPOINTS, USE_MOCK_DATA } from "../../config/apiConfig";
+import { deleteRegion, fetchRegionComments, fetchRegionDetails, patchLayer, patchRegion, sendRegion, updateRegion } from "../../services/regionApi";
 import {
   addShapeComment,
   findShapeAtLatLng,
@@ -92,21 +93,20 @@ function formatRegionInfo(info, comments = []) {
     <div class="region-hover-popup">
       <strong>${escapeHtml(info.regionId || info.id || info.message || "Selected region")}</strong>
       ${rows
-        .map(
-          ([label, value]) =>
-            `<div><span>${escapeHtml(label)}:</span> ${escapeHtml(value)}</div>`
-        )
-        .join("")}
+      .map(
+        ([label, value]) =>
+          `<div><span>${escapeHtml(label)}:</span> ${escapeHtml(value)}</div>`
+      )
+      .join("")}
       <div class="region-comments">
         <span>Comments:</span>
         <ul>
-          ${
-            comments.length > 0
-              ? comments
-                  .map((comment) => `<li>${escapeHtml(normalizeCommentText(comment))}</li>`)
-                  .join("")
-              : "<li>No comments yet</li>"
-          }
+          ${comments.length > 0
+      ? comments
+        .map((comment) => `<li>${escapeHtml(normalizeCommentText(comment))}</li>`)
+        .join("")
+      : "<li>No comments yet</li>"
+    }
         </ul>
       </div>
     </div>
@@ -114,7 +114,7 @@ function formatRegionInfo(info, comments = []) {
 }
 
 function BackendGeometrySync() {
-  const { map, activeTool, activeSubTool, setNotification, updateLayer } = useMapContext();
+  const { map, activeTool, activeSubTool, setNotification, updateLayer, addLayer, setActiveLayerId, layers } = useMapContext();
   const regionsRef = useRef([]);
   const popupRef = useRef(null);
 
@@ -144,11 +144,47 @@ function BackendGeometrySync() {
         const backendId = getBackendShapeId(createResponse, layerId);
         const details = (await fetchRegionDetails(geometry)) || createResponse;
         const comments = await fetchRegionComments(backendId);
+
+        const returnedLayerId = createResponse?.layer_id ?? createResponse?.layerId ?? parentLayerId;
+        const returnedCaseId = createResponse?.case_id ?? createResponse?.caseId ?? null;
+
+        let finalParentLayerId = parentLayerId;
+
+        if (parentLayerId === null && returnedLayerId !== null) {
+          const existingLocalGroup = layers.find((l) => l.backendId === returnedLayerId || l.id === returnedLayerId);
+          if (!existingLocalGroup) {
+            const operationalGroupName = "Operational Layer";
+            const groupRecord = {
+              id: returnedLayerId,
+              name: operationalGroupName,
+              type: "group",
+              visible: true,
+              opacity: 1,
+              parentLayerId: null,
+              layer: null,
+              backendId: returnedLayerId,
+              case_id: returnedCaseId,
+              backendSynced: true,
+              skipBackendSync: true,
+              color: "#2563eb",
+              category: null,
+              radius: null,
+              popupContent: null,
+              data: null,
+              properties: { name: operationalGroupName, type: "group", color: "#2563eb" },
+            };
+            addLayer(groupRecord);
+          }
+          finalParentLayerId = returnedLayerId;
+          setActiveLayerId(returnedLayerId);
+        }
+
         updateLayer(layerId, {
           backendId,
           backendSynced: true,
           backendDetails: details,
           backendComments: comments,
+          parentLayerId: finalParentLayerId || null,
           skipBackendSync: true,
         });
         const savedShape = registerShape({
@@ -180,6 +216,12 @@ function BackendGeometrySync() {
       const featureId = backendId || layerId;
       const normalizedLayerName = layerName?.trim() || "Updated Geometry";
 
+      const parentGroup = parentLayerId != null
+        ? layers?.find((l) => l.id === parentLayerId)
+        : null;
+      const parentBackendId = parentGroup?.backendId ?? parentGroup?.id ?? parentLayerId;
+      const caseId = parentGroup?.case_id || parentGroup?.properties?.case_id || null;
+
       try {
         const updateResponse = await updateRegion(
           featureId,
@@ -187,7 +229,8 @@ function BackendGeometrySync() {
           normalizedLayerName,
           geometry,
           properties || {},
-          parentLayerId
+          parentBackendId,
+          caseId
         );
         const details = (await fetchRegionDetails(geometry)) || updateResponse;
         const comments = await fetchRegionComments(featureId);
@@ -223,6 +266,7 @@ function BackendGeometrySync() {
     };
 
     const unsubscribeCreated = eventBus.subscribe(MAP_EVENTS.GEOMETRY_CREATED, (payload) => {
+      if (payload?.skipBackendSync) return;
       if (!DRAWN_SHAPE_TYPES.has(payload?.type)) return;
       sendGeometry({
         layerId: payload.layerId,
@@ -246,18 +290,46 @@ function BackendGeometrySync() {
       });
     });
 
-    const unsubscribeLayerRenamed = eventBus.subscribe(MAP_EVENTS.LAYER_RENAMED, (payload) => {
+    const unsubscribeLayerRenamed = eventBus.subscribe(MAP_EVENTS.LAYER_RENAMED, async (payload) => {
       if (!payload?.backendId || payload?.skipBackendSync || !payload?.backendSynced) return;
 
-      updateGeometry({
-        layerId: payload.id,
-        backendId: payload.backendId,
-        layerName: payload.name || "Updated Geometry",
-        geojson: payload.data,
-        properties: payload.properties || payload.data?.properties || {},
-        parentLayerId: payload.parentLayerId || null,
-        type: payload.type || null,
-      });
+      const isGroup = payload.isGroup === true || payload.type === "group" || payload.syntheticGroup === true;
+      const backendId = payload.backendId;
+
+      try {
+        if (isGroup) {
+          await patchLayer(backendId, { name: payload.name });
+          setNotification(`${payload.name || "Layer"} updated successfully.`);
+        } else {
+          const patchData = {};
+          if (payload.name) {
+            patchData.name = payload.name;
+            patchData.properties = { name: payload.name };
+          }
+          if (payload.properties) {
+            patchData.properties = patchData.properties || {};
+            if (payload.properties.color !== undefined) patchData.properties.color = payload.properties.color;
+            if (payload.properties.category !== undefined) patchData.properties.category = payload.properties.category;
+            if (payload.properties.strokeWidth !== undefined) patchData.properties.strokeWidth = payload.properties.strokeWidth;
+            if (payload.properties.fillOpacity !== undefined) patchData.properties.fillOpacity = payload.properties.fillOpacity;
+          }
+
+          // Resolve parent layer group's backend ID to send as layer_id
+          const parentGroup = payload.parentLayerId != null
+            ? layers?.find((l) => l.id === payload.parentLayerId)
+            : null;
+          const parentBackendId = parentGroup?.backendId ?? parentGroup?.id ?? null;
+          if (parentBackendId !== null) {
+            patchData.layer_id = parentBackendId;
+          }
+
+          await patchRegion(backendId, patchData);
+          setNotification(`${payload.name || "Feature"} updated successfully.`);
+        }
+      } catch (error) {
+        console.error("[BackendSync] Layer rename/patch failed:", error);
+        setNotification(`Update sync failed: ${error.message || "Unknown error"}`);
+      }
     });
 
     const unsubscribeSelected = eventBus.subscribe(MAP_EVENTS.GEOMETRY_SELECTED, (payload) => {
@@ -303,7 +375,7 @@ function BackendGeometrySync() {
       unsubscribeDeleted();
       unsubscribeCommentAdded();
     };
-  }, [setNotification, updateLayer]);
+  }, [setNotification, updateLayer, addLayer, setActiveLayerId, layers]);
 
   useEffect(() => {
     if (!map) return;

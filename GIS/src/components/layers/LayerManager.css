@@ -37,18 +37,20 @@
 .sidebar-layer-manager {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-secondary);
 }
 
+
 .sidebar-layer-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 280px;
+  max-height: 210px;
+
   overflow-y: auto;
   padding: 0 4px;
   min-height: 0;
@@ -95,7 +97,11 @@
 .sidebar-layer-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+}
+
+.sidebar-layer-row .sidebar-layer-action {
+  margin-left: -4px;
 }
 
 .sidebar-layer-meta {
@@ -112,7 +118,22 @@
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
+  position: relative;
+
+  /* keep animation from affecting layout / overlapping icons */
+  display: inline-block;
+  max-width: 100%;
+  will-change: transform;
+}
+
+
+
+
+/* prevent flex shrink issues */
+.sidebar-layer-action,
+.sidebar-layer-visibility {
+  flex: 0 0 auto;
 }
 
 .sidebar-layer-visibility,
@@ -141,3 +162,4 @@
   color: var(--text-muted);
   text-transform: capitalize;
 }
+

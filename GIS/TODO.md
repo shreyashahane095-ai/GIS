@@ -1,5 +1,10 @@
-- [ ] Explore chatbot styles and identify padding causing non-transparent/opaque background
-- [ ] Update ChatbotPanel.css to make the “padding” area transparent (likely chatbot-input-row / chatbot-tabs / chatbot-history backgrounds)
-- [ ] Verify no other chatbot elements rely on background/padding for readability
-- [ ] Run build/dev command (if available) or sanity-check with local rendering
+# FrontendGIS TODO
+
+## Task: Save polygon/shape -> create Untitled layer and feature under it
+- [x] Implement logic so that when user clicks **Save shape**, the code creates/uses an **untitled layer (group)** (parent) and creates the **feature under that group**.
+
+- [x] Ensure local layer tree (LayerManager) reflects: **Untitled Layer (group) -> feature (child)**.
+
+- [ ] Fix any incorrect payload fields used in `createFeature` so `parent_layer_id` and `layer_id` align with backend expectations.
+- [ ] Run quick sanity check by saving a polygon and verifying layer sidebar structure.
 
