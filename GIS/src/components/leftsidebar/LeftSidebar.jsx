@@ -160,6 +160,7 @@ const LeftSidebar = ({
       <div className="sidebar-footer">
         <BrowseDataHub onDatasetSelect={handleDatasetSelect} />
       </div>
+      
     </div>
   );
 };

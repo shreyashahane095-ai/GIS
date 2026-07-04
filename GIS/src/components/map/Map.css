@@ -193,3 +193,9 @@
   transform: translate(-50%, -50%) rotate(var(--segment-angle, 0deg));
   transform-origin: center center;
 }
+
+/* Hide Leaflet popup close button (e.g., basemap popup) */
+.gis-map .leaflet-popup-close-button {
+  display: none !important;
+}
+

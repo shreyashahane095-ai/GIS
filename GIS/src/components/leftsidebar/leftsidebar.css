@@ -489,7 +489,8 @@
   border-color: var(--primary);
   color: var(--primary);
   background-color: var(--bg-secondary);
-  transform: translateY(-1px);
+  /* Avoid moving the button up while parent has overflow:hidden (top border gets clipped). */
+  transform: translateY(0);
   box-shadow: var(--shadow-md);
 }
 
@@ -497,6 +498,7 @@
 .sidebar-upload-btn:hover {
   border-color: var(--primary) !important;
 }
+
 
 
 
@@ -508,11 +510,12 @@
    DATASETS
    ============================================ */
 .datasets-section {
-  /* Overlap basemap switcher button (Map right now is absolute controls) */
-  position: absolute;
+  /* Overlap basemap switcher button */
+  position: fixed;
   left: 20px;
   bottom: 20px;
-  z-index: 2000;
+  z-index: 1000;
+
 
   display: flex;
   flex-direction: column;

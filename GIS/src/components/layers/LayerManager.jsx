@@ -74,8 +74,7 @@ function LayerNode({
           <div className="sidebar-layer-meta">
             <span className="sidebar-layer-name">{node.name}</span>
             <span className="sidebar-layer-type">
-              {node.type}
-              {node.category ? ` · ${node.category}` : ""}
+              {node.category ? `${node.category}` : ""}
             </span>
           </div>
 
@@ -180,12 +179,22 @@ function LayerManager({
 
     const name = editForm.name.trim();
     const type = editForm.type.trim();
-    const color = /^#[0-9a-fA-F]{6}$/.test(editForm.color)
-      ? editForm.color
-      : editingLayer.color || editingLayer.properties?.color || "#2563eb";
-    const opacity = Number.isFinite(Number(editForm.opacity))
-      ? Math.min(1, Math.max(0, Number(editForm.opacity)))
-      : 1;
+
+    // Only groups (like Untitled Layer) should support editing colour/opacity.
+    // Features inside the group should NOT show/apply these fields.
+    const isGroup = editingLayer.type === "group" || editingLayer.syntheticGroup;
+
+    const color = isGroup
+      ? /^#[0-9a-fA-F]{6}$/.test(editForm.color)
+        ? editForm.color
+        : editingLayer.color || editingLayer.properties?.color || "#2563eb"
+      : undefined;
+
+    const opacity = isGroup
+      ? Number.isFinite(Number(editForm.opacity))
+        ? Math.min(1, Math.max(0, Number(editForm.opacity)))
+        : 1
+      : undefined;
 
     const nextErrors = {
       name: name ? "" : "This information is required.",
@@ -196,19 +205,20 @@ function LayerManager({
       return;
     }
 
-    onEditLayer?.(editingLayer.id, {
+    const updates = {
       name,
       type,
-      color,
-      opacity,
+      isGroup,
+      ...(isGroup ? { color, opacity } : {}),
       properties: {
         ...(editingLayer.properties || {}),
         name,
         type,
-        color,
-        opacity,
+        ...(isGroup ? { color, opacity } : {}),
       },
-    });
+    };
+
+    onEditLayer?.(editingLayer.id, updates);
     closeEditModal();
   };
 
@@ -234,18 +244,18 @@ function LayerManager({
           </div>
         )}
         {topLevelLayers.map((layer) => (
-            <LayerNode
-              key={layer.id}
-              node={layer}
-              depth={0}
-              activeLayerId={activeLayerId}
-              onSelectLayer={onSelectLayer}
-              onToggleLayerVisibility={onToggleLayerVisibility}
-              onEditLayer={openEditModal}
-              onZoomToLayer={onZoomToLayer}
-              onRemoveLayer={onRemoveLayer}
-            />
-          ))}
+          <LayerNode
+            key={layer.id}
+            node={layer}
+            depth={0}
+            activeLayerId={activeLayerId}
+            onSelectLayer={onSelectLayer}
+            onToggleLayerVisibility={onToggleLayerVisibility}
+            onEditLayer={openEditModal}
+            onZoomToLayer={onZoomToLayer}
+            onRemoveLayer={onRemoveLayer}
+          />
+        ))}
       </div>
 
       <LayerEditModal

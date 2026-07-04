@@ -80,6 +80,7 @@ function buildFeaturePayload({
   properties = {},
   parentLayerId = null,
   createdBy = null,
+  caseId = null,
 }) {
   const resolvedLayerId = resolveIntegerId(
     parentLayerId,
@@ -89,36 +90,26 @@ function buildFeaturePayload({
     properties?.layer_id,
     properties?.layerId
   );
-  const resolvedParentLayerId = resolveIntegerId(
-    parentLayerId,
-    properties?.parentLayerId,
-    properties?.parent_layer_id
-  );
   const resolvedCreatedBy = resolveCreatedBy(createdBy);
-
-  if (resolvedLayerId === null) {
-    throw new Error(
-      `Unable to resolve a numeric layer_id from "${layerId}". Pass a backend layer id instead of a temporary client id.`
-    );
-  }
+  const resolvedCaseId = resolveIntegerId(
+    caseId,
+    properties?.caseId,
+    properties?.case_id
+  );
 
   if (resolvedCreatedBy === null) {
     throw new Error('Unable to resolve a numeric created_by id.');
   }
 
   return {
-    layer_id: resolvedLayerId,
     name,
-    layer_name: name,
     geometry,
     properties: {
-      ...DEFAULT_FEATURE_PROPERTIES,
-      ...properties,
       name,
-      layerName: name,
+      ...properties,
     },
-    ...(resolvedParentLayerId !== null ? { parent_layer_id: resolvedParentLayerId } : {}),
     created_by: resolvedCreatedBy,
+    layer_id: resolvedLayerId,
   };
 }
 
@@ -136,7 +127,8 @@ export async function sendRegion(
   geometry,
   properties = {},
   parentLayerId = null,
-  createdBy = null
+  createdBy = null,
+  caseId = null
 ) {
   const payload = buildFeaturePayload({
     layerId,
@@ -145,6 +137,7 @@ export async function sendRegion(
     properties,
     parentLayerId,
     createdBy,
+    caseId,
   });
 
   eventBus.publish(MAP_EVENTS.API_REQUEST_STARTED, {
@@ -362,7 +355,7 @@ export async function saveLayerGroup(groupId, groupName, payload = {}) {
   // If backend endpoints are not configured yet, return a mock success.
   if (!API_ENDPOINTS.LAYERS) {
     return {
-      case_id: resolveIntegerId(payload.case_id, groupId, 1) ?? 1,
+      case_id: resolveIntegerId(payload.case_id, groupId) ?? null,
       name: groupName,
       layer_type: payload.layer_type || 'Operational',
       visible: payload.visible ?? true,
@@ -382,11 +375,10 @@ export async function saveLayerGroup(groupId, groupName, payload = {}) {
     if (USE_MOCK_DATA) {
       await delay(250);
       return {
-        case_id: resolveIntegerId(payload.case_id, groupId, 1) ?? 1,
+        case_id: resolveIntegerId(payload.case_id, groupId) ?? null,
         name: groupName,
         layer_type: payload.layer_type || 'Operational',
         visible: payload.visible ?? true,
-        ...payload,
         backendSynced: true,
         mock: true,
       };
@@ -395,13 +387,12 @@ export async function saveLayerGroup(groupId, groupName, payload = {}) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-    const resolvedCaseId = resolveIntegerId(payload.case_id, groupId, payload.id, payload.layer_id, payload.layerId) ?? 1;
+    const resolvedCaseId = resolveIntegerId(payload.case_id, groupId, payload.id, payload.layer_id, payload.layerId) ?? null;
     const requestBody = {
       case_id: resolvedCaseId,
       name: groupName,
       layer_type: payload.layer_type || 'Operational',
       visible: payload.visible ?? true,
-      ...payload,
     };
 
     const res = await fetch(API_ENDPOINTS.LAYERS, {
@@ -444,7 +435,8 @@ export async function updateRegion(
   name,
   geometry,
   properties = {},
-  parentLayerId = null
+  parentLayerId = null,
+  caseId = null
 ) {
   // If backend endpoints are not configured yet, return a mock success.
   if (!API_ENDPOINTS.FEATURES) {
@@ -486,15 +478,18 @@ export async function updateRegion(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-    const endpoint = `${API_ENDPOINTS.FEATURES}/${encodeURIComponent(featureId)}`;
+    const endpoint = API_ENDPOINTS.UPDATE_FEATURE
+      ? API_ENDPOINTS.UPDATE_FEATURE(featureId)
+      : `${API_ENDPOINTS.FEATURES}/${encodeURIComponent(featureId)}`;
+
     const payload = buildFeaturePayload({
       layerId,
       name,
       geometry,
       properties: {
         ...properties,
-        parentLayerId,
       },
+      caseId,
     });
 
     const res = await fetch(endpoint, {
@@ -526,6 +521,149 @@ export async function updateRegion(
   }
 }
 
+/**
+ * Patch an existing region feature in the backend.
+ *
+ * @param {number|string} featureId
+ * @param {Object} patchData
+ * @param {number|string} [layerId]
+ * @param {number|string} [caseId]
+ * @returns {Promise<Object>}
+ */
+export async function patchRegion(featureId, patchData, layerId = null, caseId = null) {
+  if (!API_ENDPOINTS.FEATURES) {
+    return {
+      id: featureId,
+      message: 'Mock patch succeeded',
+      mock: true,
+      ...patchData,
+    };
+  }
+
+  eventBus.publish(MAP_EVENTS.API_REQUEST_STARTED, {
+    type: 'patchRegion',
+    featureId,
+    patchData,
+  });
+
+  try {
+    if (USE_MOCK_DATA) {
+      await delay(250);
+      return {
+        id: featureId,
+        message: 'Mock patch succeeded',
+        mock: true,
+        ...patchData,
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    const endpoint = API_ENDPOINTS.PATCH_FEATURE
+      ? API_ENDPOINTS.PATCH_FEATURE(featureId)
+      : `${API_ENDPOINTS.FEATURES}/${encodeURIComponent(featureId)}`;
+
+    const res = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patchData),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status} ${await readErrorMessage(res)}`);
+    }
+
+    const response = await res.json();
+    eventBus.publish(MAP_EVENTS.API_REQUEST_COMPLETED, {
+      type: 'patchRegion',
+      response,
+    });
+    return response;
+  } catch (error) {
+    eventBus.publish(MAP_EVENTS.API_REQUEST_FAILED, {
+      type: 'patchRegion',
+      error: error.message || 'Unknown error',
+    });
+    console.error('[RegionAPI] patchRegion failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Patch an existing layer group in the backend.
+ *
+ * @param {number|string} layerId
+ * @param {Object} patchData
+ * @param {number|string} [caseId]
+ * @returns {Promise<Object>}
+ */
+export async function patchLayer(layerId, patchData, caseId = null) {
+  if (!API_ENDPOINTS.LAYERS) {
+    return {
+      id: layerId,
+      message: 'Mock patch succeeded',
+      mock: true,
+      ...patchData,
+    };
+  }
+
+  eventBus.publish(MAP_EVENTS.API_REQUEST_STARTED, {
+    type: 'patchLayer',
+    layerId,
+    patchData,
+  });
+
+  try {
+    if (USE_MOCK_DATA) {
+      await delay(250);
+      return {
+        id: layerId,
+        message: 'Mock patch succeeded',
+        mock: true,
+        ...patchData,
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+    const endpoint = API_ENDPOINTS.PATCH_LAYER
+      ? API_ENDPOINTS.PATCH_LAYER(layerId)
+      : `${API_ENDPOINTS.LAYERS}/${encodeURIComponent(layerId)}`;
+
+    const res = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patchData),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status} ${await readErrorMessage(res)}`);
+    }
+
+    const response = await res.json();
+    eventBus.publish(MAP_EVENTS.API_REQUEST_COMPLETED, {
+      type: 'patchLayer',
+      response,
+    });
+    return response;
+  } catch (error) {
+    eventBus.publish(MAP_EVENTS.API_REQUEST_FAILED, {
+      type: 'patchLayer',
+      error: error.message || 'Unknown error',
+    });
+    console.error('[RegionAPI] patchLayer failed:', error);
+    throw error;
+  }
+}
+
 
 /**
  * Save a comment for a polygon/region.
@@ -544,6 +682,7 @@ export async function saveRegionComment({
   geometry,
   comment,
   annotationType = 'comment',
+  caseId = null,
 }) {
   if (!API_ENDPOINTS.FEATURES) {
     throw new Error('Comments endpoint is not configured');
@@ -558,6 +697,7 @@ export async function saveRegionComment({
       text: comment,
       annotationType,
     },
+    caseId,
   });
 
   eventBus.publish(MAP_EVENTS.API_REQUEST_STARTED, {
