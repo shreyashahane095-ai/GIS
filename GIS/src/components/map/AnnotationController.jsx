@@ -219,9 +219,9 @@ function AnnotationController() {
         annotationType: pendingAnnotation.type,
       });
 
+      // Show only the comment text on hover/click (no id / no label)
       const popupContent = `
-        <strong>${escapeHtml(pendingAnnotation.config.label)}</strong>
-        <div style="white-space:pre-wrap;margin-top:4px">${escapeHtml(text.trim())}</div>
+        <div style="white-space:pre-wrap">${escapeHtml(text.trim())}</div>
       `;
 
       pendingAnnotation.marker.bindPopup(popupContent).openPopup();

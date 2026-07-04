@@ -1137,8 +1137,7 @@ function Map() {
       attributionControl={true}
     >
       <MapEvents />
-      <BoundaryLayer />
-    <DrawController />
+      <DrawController />
       <SelectionController />
       <TextController />
       {!isWindy && currentBasemap.url && (
